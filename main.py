@@ -1,8 +1,10 @@
-# This is a sample Python script.
+from math import cos
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+GRAVITATIONAL_CONSTANT: float = 9.8
 
+# Calculate Rolling Resistance using fᵣ = cᵣ * m * g * cos(α)
+def calculate_fᵣ(m: float, cᵣ: float, g: float) -> float:
+    return cᵣ * m * GRAVITATIONAL_CONSTANT * cos(g)
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
