@@ -22,7 +22,7 @@ def calculate_rolling_resistance(mass: Kilogram, friction_coefficient: float, gr
     return friction_coefficient * mass * GRAVITATIONAL_CONSTANT * cos(gradient)
 
 # Calculate aerodynamic resistance
-def calculate_air_resistance(speed: float, drag_coefficient: float, air_density: float, frontal_area: float) -> float:
+def calculate_air_resistance(speed: float,drag_coefficient: float, air_density: float, frontal_area: float) -> float:
     return (1 / 2) * air_density * frontal_area * drag_coefficient * (speed ** 2)
 
 # Calculate total mechanical power needed
@@ -36,3 +36,7 @@ def calculate_electric_power(mechanical_power: Kilowatt) -> Kilowatt | ValueErro
 # Calculate battery power required
 def calculate_battery_power(electric_power: Kilowatt) -> Kilowatt:
     return (φd * electric_power if electric_power >= 0 else φr * electric_power)
+
+# Calculate battery cost of a graph arc
+def calculate_battery_arc(drag_coefficient: float, air_density: float, frontal_area: float, cargo_at_point: Kilogram, cargo_mass: Kilogram, car_mass: Kilogram, gradient_at_arc: float, friction_coefficient: float, speed: float, point_speed: float) -> float:
+    return ((1 / 2) * drag_coefficient * air_density * frontal_area * (speed ** 2) + (car_mass + cargo_mass * cargo_at_point) * GRAVITATIONAL_CONSTANT * (sin(gradient_at_arc) + friction_coefficient * cos(gradient_at_arc))) * point_speed
