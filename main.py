@@ -10,6 +10,10 @@ def calculate_rolling_resistance(mass: float, friction_coefficient: float, gradi
 def calculate_air_resistance(speed: float, drag_coefficient: float, air_density: float, frontal_area: float) -> float:
     return (1 / 2) * air_density * frontal_area * drag_coefficient * (speed ** 2)
 
+# Calculate total mechanical power needed
+def calculate_total_mechanical_power(mass: float, acceleration: float, drag_coefficient: float, air_density: float, frontal_area: float, speed: float, gradient: float, friction_coefficient: float) -> float:
+    return (mass * acceleration + calculate_air_resistance(speed, drag_coefficient, air_density, frontal_area) + mass * GRAVITATIONAL_CONSTANT * sin(gradient) + calculate_rolling_resistance(mass, friction_coefficient, gradient)) * speed
+
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
     print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
