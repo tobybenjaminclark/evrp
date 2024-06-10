@@ -1,10 +1,14 @@
-from math import cos
+from math import cos, sin
 
 GRAVITATIONAL_CONSTANT: float = 9.8
 
 # Calculate Rolling Resistance using fᵣ = cᵣ * m * g * cos(α)
-def calculate_fᵣ(m: float, cᵣ: float, g: float) -> float:
-    return cᵣ * m * GRAVITATIONAL_CONSTANT * cos(g)
+def calculate_rolling_resistance(mass: float, friction_coefficient: float, gradient: float) -> float:
+    return friction_coefficient * mass * GRAVITATIONAL_CONSTANT * cos(gradient)
+
+# Calculate aerodynamic resistance
+def calculate_air_resistance(speed: float, drag_coefficient: float, air_density: float, frontal_area: float) -> float:
+    return (1 / 2) * air_density * frontal_area * drag_coefficient * (speed ** 2)
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
