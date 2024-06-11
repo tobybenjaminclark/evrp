@@ -38,8 +38,78 @@ from math import sin, cos
 # P is the air density (kg/m^3)
 # V(t) is the instantaneous speed (m/s)
 
-# Mechanical Power Pm(t) needed to make the vehicle move, calculated by multiplying [1] by instantaneous speed.
+# Mechanical Power Pm(t) needed to make the vehicle move, calculated by multiplying [1] by instantaneous speed. [2]
 # Pm(t) = m * a * v(t) + m * g * v(t) * sin * theta(t) + m * g * v(t) * C_r * cos * theta(t) + 0.5 * C_d * A * p * v(t)^3
 
-def calculate_mechanical_power(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
+def get_pmt(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
     return m * a * v + m * g * v * sin * theta + m * g * v * C_r * cos * theta + 0.5 * C_d * A * p * v^3
+
+
+
+
+
+
+
+# Energy & Efficieny
+# The electric powertrain is composed of several components that convert electric energy from the battery into a mechanical fore
+# to make the vehicle move. It is possible to reover energy and charge the battery when the vehicle is braking. The
+
+# We can get instantaneus electric power from mechanical power dependent on if MP is positive/negative
+# P_e(t) =  Pm(t) / n_+(t)  IF pm(t) >= 0
+#           Pm(t) / n_-(t)  ELSE
+
+# n_+(t) and n_-(t) are the instantaneous efficiency for the complete powertrain. (battery to wheels and wheels to battery)
+# Traction Mode N+
+# Regeneration Mode N-
+# Regen mdoe can be triggered by negative acceleration/road grade
+
+# Total Mechanical Energy e_m needed to drive a certain stretch of road, can becalculated by integrating [2] with time.
+# Given an approimated constatn acceleration/deceleration a*, initial speed v_i and total surface distance d(m)
+# e_m = (mass * acceleration * distance + mass * gravity * distance * sin * gradient + 0.5 * drag_coefficient * frontal_surface * air_density * distance * (initial_speed^2 + (final_speed^2 - initial_speed^2) / 2)) / 3600
+
+
+
+
+
+
+
+
+# Acceleration & Speed Curves
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
