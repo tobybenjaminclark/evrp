@@ -37,6 +37,10 @@ def calculate_electric_power(mechanical_power: Kilowatt) -> Kilowatt | ValueErro
 def calculate_battery_power(electric_power: Kilowatt) -> Kilowatt:
     return (φd * electric_power if electric_power >= 0 else φr * electric_power)
 
-# Calculate battery cost of a graph arc
-def calculate_battery_arc(drag_coefficient: float, air_density: float, frontal_area: float, cargo_at_point: Kilogram, cargo_mass: Kilogram, car_mass: Kilogram, gradient_at_arc: float, friction_coefficient: float, speed: float, point_speed: float) -> float:
+# Calculate mechanical energy consumption cost of a graph edge
+def calculate_energy_consumption(drag_coefficient: float, air_density: float, frontal_area: float, cargo_at_point: Kilogram, cargo_mass: Kilogram, car_mass: Kilogram, gradient_at_arc: float, friction_coefficient: float, speed: float, point_speed: float) -> float:
     return ((1 / 2) * drag_coefficient * air_density * frontal_area * (speed ** 2) + (car_mass + cargo_mass * cargo_at_point) * GRAVITATIONAL_CONSTANT * (sin(gradient_at_arc) + friction_coefficient * cos(gradient_at_arc))) * point_speed
+
+# Electrical Energy Consumption
+def calculate_electrical_energy_consumption(travel_time: float, pij) -> float:
+    return (Φd * φd * pij * travel_time) if pij >= 0 else (Φr * φr * pij * travel_time)
