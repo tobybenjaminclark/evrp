@@ -21,6 +21,10 @@ class LocationNode():
 
 
 
+def
+
+
+
 def find_locations(api_key, location, radius=5000, keyword="Costa Coffee", type="cafe"):
 
     base_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
