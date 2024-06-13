@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from src_road_graph.road_get import *
 import requests
 from enum import Enum
+from constants import GOOGLE_API_KEY
 
 location_types = Enum('location_type', ['customer', 'depot', 'charging_point'])
 
@@ -21,7 +22,8 @@ class LocationNode():
 
 
 
-def
+def find_locations(location, keyword, radius, type) -> list[LocationNode]:
+    return []
 
 
 

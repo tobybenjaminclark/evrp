@@ -1,9 +1,9 @@
 from src_road_graph.road_get import *
 from src_road_graph.find_locations import *
+from constants import GOOGLE_API_KEY
 
 """
 # Get road stuff!
-api_key = 'AIzaSyAIy3aKowVY3hVN_U3yLn--SchB3GeZj8g'
 origin = 'School of Computer Science, University of Nottingham, Nottingham'
 destination = 'Tesco Beeston, Beeston, Nottingham'
 
@@ -16,7 +16,6 @@ draw_graph(G)
 """
 
 """
-api_key = 'AIzaSyAIy3aKowVY3hVN_U3yLn--SchB3GeZj8g'
 location = (52.9540, -1.150000)
 
 costa_coffees = find_locations(api_key, location, 3000, "", "electric_vehicle_charging_station")
@@ -96,7 +95,7 @@ def get_route_altitude(api_key, origin, destination):
         print("Failed to retrieve directions.")
 
 # Example usage
-api_key = 'AIzaSyAIy3aKowVY3hVN_U3yLn--SchB3GeZj8g'
+api_key = GOOGLE_API_KEY
 origin = '210 Great Knightleys, Basildon, Essex'
 destination = '81 Great Knightelys, Basildon, Essex'
 get_route_altitude(api_key, origin, destination)
