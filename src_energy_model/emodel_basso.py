@@ -75,33 +75,85 @@ def get_pmt(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
 
 
 # Acceleration & Speed Curves
+#
+#   Acceleration Distance = (steady_speed^-2 - initial_speed^2) / 2 * acceleration
+#   Deceleration Distance = (final_speed^2 - steady_speed^-2) / 2 * deceleration
+#
+#
+#
+#                        acceleration_distance * (mass * acceleration + mass * gravity * sin * ab_gradient + mass * gravity * rolling_resistance * cos * ab_gradient + R * (initial_speed^2 + (steady_speed^-2 - initial_speed^2) / 2)))
+# acceleration energy = ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                                                                                   3600 * n_accelerate
+
+#                   (distance_ab - distance_acceleration - distance_deceleration) * (mass * gravity * sin * gradient_ab + mass * gravity * rolling_resistane * cos * gradient_ab + R * steady_speed^-2)
+# steady_energy = ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                                                                                   36000 * n_steady
+
+#                          deceleration_distance * (mass * deceleration + mass *gravity * sin * gradient_ab + mass * gravity * rolling_resistance * cos * gradient_ab + R * (steady_speed^-2 + (final_speed^-2 - steady_speed^-2) / 2))
+# deceleration_energy = ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                                                                                   36000 * n_deceleration
 
 
+import math
+
+# Define constants and parameters (example values)
+g = 9.81  # gravitational constant in m/s^2
+Cr = 0.0064  # rolling resistance coefficient
+Rd = 0.7  # drag coefficient (example value)
+bar_eta = 0.9  # efficiency factor (example value)
+bar_a = 0.9  # assumed acceleration in m/s^2
 
 
+def calculate_alpha_beta(d, alpha_ab_angle, v_i, bar_v_ab, v_f):
+    # Calculate sin and cos of the approximated angle
+    sin_bar_alpha_ab = math.sin(math.radians(alpha_ab_angle))
+    cos_bar_alpha_ab = math.cos(math.radians(alpha_ab_angle))
+
+    # Calculate alpha_a, alpha_b, alpha_i
+    alpha_a = d * (bar_a + g * sin_bar_alpha_ab + g * Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
+    alpha_b = g * d * (sin_bar_alpha_ab + Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
+    alpha_i = d * (bar_a + g * sin_bar_alpha_ab + g * Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
+
+    # Calculate beta_a, beta_b, beta_i
+    beta_a = Rd * (v_i ** 2 + (bar_v_ab ** 2 - v_i ** 2) / 2) / (3600 * bar_eta)
+    beta_b = Rd * (d ** 2 * bar_v_ab ** 2) / (3600 * bar_eta)
+    beta_i = Rd * (bar_v_ab + (v_f - bar_v_ab) / 2) / (3600 * bar_eta)
+
+    # Calculate alpha_ab and beta_ab
+    alpha_ab = alpha_a + alpha_b + alpha_i
+    beta_ab = beta_a + beta_b + beta_i
+
+    return alpha_ab, beta_ab
 
 
+# Function to calculate energy demand e_ab
+def calculate_energy_demand(d, alpha_ab_angle, v_i, bar_v_ab, v_f, m):
+    alpha_ab, beta_ab = calculate_alpha_beta(d, alpha_ab_angle, v_i, bar_v_ab, v_f)
+    e_ab = alpha_ab * m + beta_ab
+    return e_ab
 
 
+# Define test cases
+test_cases = [
+    {"d": 1000, "alpha_ab_angle": 5, "v_i": 20, "bar_v_ab": 25, "v_f": 30, "m": 1500},
+    {"d": 500, "alpha_ab_angle": 2, "v_i": 15, "bar_v_ab": 20, "v_f": 25, "m": 1200},
+    {"d": 2000, "alpha_ab_angle": 10, "v_i": 25, "bar_v_ab": 30, "v_f": 35, "m": 2000},
+    {"d": 800, "alpha_ab_angle": 3, "v_i": 10, "bar_v_ab": 15, "v_f": 20, "m": 1000},
+]
 
+# Run test cases
+for i, test in enumerate(test_cases):
+    d = test["d"]
+    alpha_ab_angle = test["alpha_ab_angle"]
+    v_i = test["v_i"]
+    bar_v_ab = test["bar_v_ab"]
+    v_f = test["v_f"]
+    m = test["m"]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    result = calculate_energy_demand(d, alpha_ab_angle, v_i, bar_v_ab, v_f, m)
+    print(f"Test case {i + 1}:")
+    print(f"Parameters: d={d}, alpha_ab_angle={alpha_ab_angle}, v_i={v_i}, bar_v_ab={bar_v_ab}, v_f={v_f}, m={m}")
+    print(f"Energy demand e_ab: {result:.2f} J\n")
 
 
 
