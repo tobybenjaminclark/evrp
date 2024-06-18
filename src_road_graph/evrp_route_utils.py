@@ -20,3 +20,15 @@ def haversine(_point_one: float, _point_two: float, earth_radius: meters = 6_387
     lat2, lon2 = map(radians, _point_two)
     a = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
     return earth_radius * (2 * atan2(sqrt(a), sqrt(1 - a)))
+
+
+def approximate_distance_from_polyline(polyline = None) -> meters:
+    """
+    This method approximates the total length of a polyline, and is used to validate the correctness of the polyline
+    against the total distance the Directions API provides. It uses the haversine function to calculate the result.
+
+    :return:    Cumulative Distance between all points in the parameterized polyline.
+    """
+
+    if polyline == None: raise ValueError
+    return sum([haversine(polyline[i], polyline[i + 1]) for i in range(len(polyline) - 1)])

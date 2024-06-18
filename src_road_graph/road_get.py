@@ -13,4 +13,4 @@ def get_directions(origin, destination):
 
 
 if(__name__ == '__main__'):
-    get_directions("210 Great Knightleys, Basildon, Essex", "81 Great Knightleys, Basildon, Essex")
+    get_directions("6 Baldwin Street, North East Valley, New Zealand", "57 Baldwin Street, North East Valley, New Zealand")

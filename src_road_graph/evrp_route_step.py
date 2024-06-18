@@ -1,8 +1,9 @@
-from evrp_route_utils import meters, haversine
+from evrp_route_utils import meters, haversine, approximate_distance_from_polyline
 from src_google_api import get_elevation_data
 from polyline import decode as polyline_decode
 from typing import Generator as generator
 from dataclasses import dataclass
+
 
 @dataclass
 class RouteStep():
@@ -11,15 +12,20 @@ class RouteStep():
     elevation_data: list[meters]
     locdata: list[tuple[tuple[float, float], meters]]
 
-    # Initialze the Route Step
     def __init__(self, _encoded_polyline: str, _dist: meters):
+        """
+        Constructor Method to initialize a RouteStep object from Google Directions API data.
+
+        :param _encoded_polyline:   Google Polyline String (see. https://developers.google.com/maps/documentation/utilities/polylinealgorithm)
+        :param _dist:               Distance of the route string.
+        """
+
         self.dist = _dist
         self.polyline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
-        self.calc_dist = self.approximate_distance_from_polyline()
+        self.calc_dist = approximate_distance_from_polyline(self.polyline)
         self.elevation_data = self.approximate_elevation_series()
-        self.locdata = zip(self.polyline, self.elevation_data)
+        self.locdata = list(zip(self.polyline, self.elevation_data))
         for n in self.locdata: print(n)
-
 
     def approximate_elevation_series(self) -> list[meters]:
         """
@@ -40,17 +46,14 @@ class RouteStep():
         return list(map(lambda d: d['elevation'], elevation_data))
 
 
-
-    def approximate_distance_from_polyline(self) -> meters:
-        """
-        This method approximates the total length of a polyline, and is used to validate the correctness of the polyline
-        against the total distance the Directions API provides. It uses the haversine function to calculate the result.
-
-        :return: Cumulative Distance between all points in the parameterized polyline.
-        """
-
-        return sum([haversine(self.polyline[i], self.polyline[i + 1]) for i in range(len(self.polyline) - 1)])
-
-
 def parse_step(step: dict) -> RouteStep:
+    """
+    This function parses a 'step' from the Google Directions API, encapsulating the data into to a RouteStep object.
+    Refer to (https://developers.google.com/maps/documentation/directions/get-directions#DirectionsLeg-steps)
+
+    :param step:    Dictionary response from Google Directions API.
+    :return:        Encapsulated RouteStep Object
+    """
+
     return RouteStep(step['polyline']['points'], step['distance']['value'])
+
