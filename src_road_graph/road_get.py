@@ -22,7 +22,44 @@ class RouteStep():
         self.dist = _dist
         self.polyline: list[tuple[float, float]] = pl.decode(_encoded_polyline, 5)
         self.calc_dist = self.total_distance()
-        pass
+        self.elevation_data = self.get_elevation_data()
+
+
+    def get_elevation_data(self):
+        # Convert polyline to list of latitude/longitude pairs
+        polyline = self.polyline
+        locations = [(polyline[i], polyline[i + 1]) for i in range(len(polyline) - 1)]
+
+        # Function to chunk list into sublists of given size
+        def chunk_list(lst, chunk_size):
+            for i in range(0, len(lst), chunk_size):
+                yield lst[i:i + chunk_size]
+
+        chunk_size = 512
+        elevation_data = []
+
+        # Process each chunk of locations
+        for chunk in chunk_list(locations, chunk_size):
+            # Convert the list of tuples into the required format for the URL
+            locations_str = '|'.join([f'{lat[0]},{lng[0]}' for (lat, lng) in chunk])
+
+            # Construct the request URL
+            request_url = f'https://maps.googleapis.com/maps/api/elevation/json?locations={locations_str}&key={GOOGLE_API_KEY}'
+            print(request_url)
+
+            # Make the request to the Elevation API
+            response = requests.get(request_url)
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                elevation_data_chunk = response.json().get('results', [])
+                elevation_data.extend(elevation_data_chunk)
+            else:
+                print(f'Error: {response.status_code}\n{response.text}')
+                return None
+
+        print(elevation_data)
+        return elevation_data
 
     def total_distance(self) -> meters:
         return sum([haversine(self.polyline[i], self.polyline[i + 1]) for i in range(len(self.polyline) - 1)])
