@@ -20,7 +20,7 @@ class RouteStep():
         chunked into sections smaller than 512 langitude, longitude pairs (limit imposed by Elevation API), before being
         passed into the API call (see https://developers.google.com/maps/documentation/elevation/).
 
-        :return: List of altitudes (in meters) for each point in the passed polyline.
+        :return: List of altitudes (in meters) for each point in the parameterized polyline.
         """
 
         elevation_data: list[float] = []
@@ -29,8 +29,16 @@ class RouteStep():
             elevation_data.extend(get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk])))
         return list(map(lambda d: d['elevation'], elevation_data))
 
-    # Gets a total estimated distance from the polyline
+
+
     def total_distance(self) -> meters:
+        """
+        This method approximates the total length of a polyline, and is used to validate the correctness of the polyline
+        against the total distance the Directions API provides. It uses the haversine function to calculate the result.
+
+        :return: Cumulative Distance between all points in the parameterized polyline.
+        """
+
         return sum([haversine(self.polyline[i], self.polyline[i + 1]) for i in range(len(self.polyline) - 1)])
 
     # String Representation
