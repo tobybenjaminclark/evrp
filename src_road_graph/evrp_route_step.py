@@ -9,13 +9,21 @@ class RouteStep():
         self.dist = _dist
         self.polyline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
         self.calc_dist = self.total_distance()
-        self.elevation_data = self.get_elevation_data()
+        self.elevation_data = self.calculate_elevation_data()
         self.locdata = zip(self.polyline, self.elevation_data)
         for n in self.locdata: print(n)
 
-    # Gets the elevation data
-    def get_elevation_data(self, elevation_data: list[float] = []) -> list[meters]:
 
+    def calculate_elevation_data(self) -> list[meters]:
+        """
+        This method samples elevation data at each point on a polyline using the Google Elevation API. The line is first
+        chunked into sections smaller than 512 langitude, longitude pairs (limit imposed by Elevation API), before being
+        passed into the API call (see https://developers.google.com/maps/documentation/elevation/).
+
+        :return: List of altitudes (in meters) for each point in the passed polyline.
+        """
+
+        elevation_data: list[float] = []
         chunk_list = lambda locations: (locations[index : index + 512] for index in range(0, len(locations), 512))
         for chunk in chunk_list(self.polyline):
             elevation_data.extend(get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk])))
