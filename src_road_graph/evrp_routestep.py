@@ -1,4 +1,4 @@
-from evrp_route_utils import meters, haversine, chunk_list
+from evrp_route_utils import meters, haversine
 from src_google_api import get_elevation_data
 from polyline import decode as polyline_decode
 
@@ -15,7 +15,9 @@ class RouteStep():
 
     # Gets the elevation data
     def get_elevation_data(self, elevation_data: list[float] = []) -> list[meters]:
-        for chunk in chunk_list(self.polyline, 512):
+
+        chunk_list = lambda locations: (locations[index : index + 512] for index in range(0, len(locations), 512))
+        for chunk in chunk_list(self.polyline):
             elevation_data.extend(get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk])))
         return list(map(lambda d: d['elevation'], elevation_data))
 

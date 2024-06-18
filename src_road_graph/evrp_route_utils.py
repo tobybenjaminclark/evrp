@@ -1,11 +1,9 @@
 from math import cos, sin, sqrt, radians, atan2
 from typing import Generator
 
+
+# Type to denote meters (avoiding unit confusion).
 meters: type = type("meters", (), {})
-
-
-def chunk_list(locations: list[tuple[float, float]], chunk_size: int = 512) -> Generator[list[tuple[float, float]], None, None]:
-    for index in range(0, len(locations), chunk_size): yield locations[index : index + chunk_size]
 
 
 def haversine(_point_one: float, _point_two: float, earth_radius: meters = 6_387_000) -> meters:
