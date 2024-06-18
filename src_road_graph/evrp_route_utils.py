@@ -1,6 +1,4 @@
 from math import cos, sin, sqrt, radians, atan2
-from typing import Generator
-
 
 # Type to denote meters (avoiding unit confusion).
 meters: type = type("meters", (), {})
@@ -18,6 +16,7 @@ def haversine(_point_one: float, _point_two: float, earth_radius: meters = 6_387
     :return:                Distance between the two points in meters.
     """
 
-    lat1, lon1, lat2, lon2 = map(radians, _point_one), map(radians, _point_two)
+    lat1, lon1 = map(radians, _point_one)
+    lat2, lon2 = map(radians, _point_two)
     a = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
     return earth_radius * (2 * atan2(sqrt(a), sqrt(1 - a)))
