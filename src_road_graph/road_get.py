@@ -1,5 +1,5 @@
 from typing import Generator
-
+from src_google_api import get_elevation_data
 import requests
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -50,22 +50,14 @@ class RouteStep():
             # Convert the list of tuples into the required format for the URL
             locations_str = '|'.join([f'{lat[0]},{lng[0]}' for (lat, lng) in chunk])
 
-            # Construct the request URL
-            request_url = f'https://maps.googleapis.com/maps/api/elevation/json?locations={locations_str}&key={GOOGLE_API_KEY}'
-            print(request_url)
-
-            # Make the request to the Elevation API
-            response = requests.get(request_url)
-
             # Check if the request was successful
-            if response.status_code == 200:
+            if (response := get_elevation_data(locations_str)).status_code == 200:
                 elevation_data_chunk = response.json().get('results', [])
                 elevation_data.extend(elevation_data_chunk)
             else:
                 print(f'Error: {response.status_code}\n{response.text}')
                 return None
 
-        print(elevation_data)
         return elevation_data
 
     def total_distance(self) -> meters:

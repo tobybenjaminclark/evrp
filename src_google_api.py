@@ -126,3 +126,31 @@ def google_nearby_search(location: tuple[float, float], radius: int, keyword = "
     except requests.exceptions.RequestException as e:
         print(f"Error: {e}")  # Print error message
         return []             # Return an empty list in case of error
+
+
+def get_elevation_data(locations_str):
+    # Construct the request URL
+    request_url = f'https://maps.googleapis.com/maps/api/elevation/json?locations={locations_str}&key={GOOGLE_API_KEY}'
+    print(request_url)
+
+    # Initialize a list to store elevation data
+    elevation_data = []
+
+    try:
+        # Make the request to the Elevation API
+        response = requests.get(request_url)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Extract elevation data
+            elevation_data_chunk = response.json().get('results', [])
+            elevation_data.extend(elevation_data_chunk)
+        else:
+            print(f'Error: {response.status_code}\n{response.text}')
+            return None
+
+    except requests.exceptions.RequestException as e:
+        print(f'Error: {e}')
+        return None
+
+    return elevation_data
