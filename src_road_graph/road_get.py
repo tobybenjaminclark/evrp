@@ -13,4 +13,4 @@ def get_directions(origin, destination):
 
 
 if(__name__ == '__main__'):
-    get_directions("52.939805, -1.193538", "52.938833, -1.192033")
+    get_directions("Amigos Pizza, Lenton, Nottingham", "Rock City, Nottingham")

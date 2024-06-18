@@ -12,6 +12,8 @@ class RouteStep():
     elevation_data: list[meters]
     locdata: list[tuple[tuple[float, float], meters]]
 
+
+
     def __init__(self, _encoded_polyline: str, _dist: meters):
         """
         Constructor Method to initialize a RouteStep object from Google Directions API data.
@@ -21,11 +23,14 @@ class RouteStep():
         """
 
         self.dist = _dist
+        self.instructions = ""
         self.polyline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
         self.calc_dist = approximate_distance_from_polyline(self.polyline)
         self.elevation_data = self.approximate_elevation_series()
         self.locdata = list(zip(self.polyline, self.elevation_data))
         for n in self.locdata: print(n)
+
+
 
     def approximate_elevation_series(self) -> list[meters]:
         """
@@ -46,6 +51,7 @@ class RouteStep():
         return list(map(lambda d: d['elevation'], elevation_data))
 
 
+
 def parse_step(step: dict) -> RouteStep:
     """
     This function parses a 'step' from the Google Directions API, encapsulating the data into to a RouteStep object.
@@ -55,5 +61,8 @@ def parse_step(step: dict) -> RouteStep:
     :return:        Encapsulated RouteStep Object
     """
 
-    return RouteStep(step['polyline']['points'], step['distance']['value'])
+    _temp: RouteStep = RouteStep(step['polyline']['points'], step['distance']['value'])
+    _temp.instructions = step['html_instructions']
+    return _temp
+
 
