@@ -36,6 +36,8 @@ class RouteStep():
         self.polyline: list[tuple[float, float]] = pl.decode(_encoded_polyline, 5)
         self.calc_dist = self.total_distance()
         self.elevation_data = self.get_elevation_data()
+        self.locdata = zip(self.polyline, self.elevation_data)
+        for n in self.locdata: print(n)
 
 
     def get_elevation_data(self):
@@ -49,11 +51,11 @@ class RouteStep():
         for chunk in chunk_list(locations, 512):
             # Convert the list of tuples into the required format for the URL
             locations_str = '|'.join([f'{lat[0]},{lng[0]}' for (lat, lng) in chunk])
+            response = get_elevation_data(locations_str)
 
             # Check if the request was successful
-            if (response := get_elevation_data(locations_str)).status_code == 200:
-                elevation_data_chunk = response.json().get('results', [])
-                elevation_data.extend(elevation_data_chunk)
+            if response != None:
+                elevation_data.extend(response)
             else:
                 print(f'Error: {response.status_code}\n{response.text}')
                 return None

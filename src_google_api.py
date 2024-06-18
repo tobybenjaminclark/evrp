@@ -133,18 +133,14 @@ def get_elevation_data(locations_str):
     request_url = f'https://maps.googleapis.com/maps/api/elevation/json?locations={locations_str}&key={GOOGLE_API_KEY}'
     print(request_url)
 
-    # Initialize a list to store elevation data
-    elevation_data = []
 
     try:
         # Make the request to the Elevation API
         response = requests.get(request_url)
-
+        print(response.json())
         # Check if the request was successful
         if response.status_code == 200:
-            # Extract elevation data
             elevation_data_chunk = response.json().get('results', [])
-            elevation_data.extend(elevation_data_chunk)
         else:
             print(f'Error: {response.status_code}\n{response.text}')
             return None
@@ -153,4 +149,4 @@ def get_elevation_data(locations_str):
         print(f'Error: {e}')
         return None
 
-    return elevation_data
+    return elevation_data_chunk
