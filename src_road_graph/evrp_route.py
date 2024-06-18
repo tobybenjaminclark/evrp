@@ -43,7 +43,7 @@ class Route():
         # Calculate the widths for each bar
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
-        plt.figure(figsize=(20, 5))
+        plt.figure(figsize=(30, 15))
 
         # Initialize the pastel color generator
         color_gen = pastel_colors_generator()
@@ -63,7 +63,7 @@ class Route():
 
         plt.xlabel('Distance (meters)')
         plt.ylabel('Altitude (meters)')
-        plt.title('Altitude vs Distance')
+        plt.title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
         plt.legend()
         plt.grid(True)
 
