@@ -119,19 +119,9 @@ def google_nearby_search(location: tuple[float, float], radius: int, keyword = "
         # Send request to Google Places API
         response = requests.get(base_url, params=params)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-
-        # Extract relevant information from response
+        print(response.json())
         results = response.json().get('results', [])
-        print(results)
-        costa_coffees = [
-            {
-                'name': place['name'],
-                'address': place.get('vicinity', 'N/A'),
-                'location': place['geometry']['location']
-            }
-            for place in results if keyword.lower() in place['name'].lower()
-        ]
-        return costa_coffees
+        return results
 
     except requests.exceptions.RequestException as e:
         print(f"Error: {e}")  # Print error message

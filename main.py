@@ -2,6 +2,15 @@ from src_road_graph.road_get import *
 from src_road_graph.find_locations import *
 from constants import GOOGLE_API_KEY
 
+r = find_locations((52.9540, -1.150000), 3000, "Costa Coffee")
+for x in r:
+    print(x)
+visualize_locations(r)
+
+g = create_full_mesh_graph(r)
+draw_full_graph(g)
+
+
 """
 # Get road stuff!
 origin = 'School of Computer Science, University of Nottingham, Nottingham'
@@ -23,7 +32,7 @@ g = create_full_mesh_graph(costa_coffees, api_key)
 draw_graph(g)
 """
 
-
+"""
 import requests
 import matplotlib.pyplot as plt
 
@@ -99,3 +108,4 @@ api_key = GOOGLE_API_KEY
 origin = '210 Great Knightleys, Basildon, Essex'
 destination = '81 Great Knightelys, Basildon, Essex'
 get_route_altitude(api_key, origin, destination)
+"""

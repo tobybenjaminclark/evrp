@@ -3,95 +3,86 @@ from src_road_graph.road_get import *
 import requests
 from enum import Enum
 from constants import GOOGLE_API_KEY
+from src_google_api import *
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
+from enum import Enum
 
 location_types = Enum('location_type', ['customer', 'depot', 'charging_point'])
 
 class LocationNode():
 
     # Constructor Method for a Location Node
-    def __init__(self, _langitude: float, _longitude: float) -> None:
-        if _langitude not in range(-90, 90): raise ValueError("Langitude must be between -90 and 90")
-        if _longitude not in range(-180, 180): raise ValueError("Longitude must be between -180 and 180")
-        self.initialize_location(_langitude, _longitude)
-
-    # Initialization for a Location Node
-    def initialize_location(self, _langitude: float, _longitude: float) -> None:
-        self.langitude: float = _langitude
+    def __init__(self, _latitude: float, _longitude: float, _name: str = '') -> None:
+        self.latitude: float = _latitude
         self.longitude: float = _longitude
-        self.label: str = ""
+        self.label: str = _name
 
+    def __repr__(self) -> str:
+        return f"{self.label}\t@\t{self.latitude}, {self.longitude}"
 
+def result_to_location(result: dict) -> LocationNode:
+    return LocationNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'])
 
-def find_locations(location, keyword, radius, type) -> list[LocationNode]:
-    return []
-
-
-
-def find_locations(api_key, location, radius=5000, keyword="Costa Coffee", type="cafe"):
-
-    base_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-    params = {
-        'location': f"{location[0]},{location[1]}",
-        'radius': radius,
-        'type': type,
-        'keyword': keyword,
-        'key': api_key
-    }
-
-    try:
-        # Send request to Google Places API
-        response = requests.get(base_url, params=params)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
-
-        # Extract relevant information from response
-        results = response.json().get('results', [])
-        print(results)
-        costa_coffees = [
-            {
-                'name': place['name'],
-                'address': place.get('vicinity', 'N/A'),
-                'location': place['geometry']['location']
-            }
-            for place in results if keyword.lower() in place['name'].lower()
-        ]
-        return costa_coffees
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")  # Print error message
-        return []             # Return an empty list in case of error
-
+def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[LocationNode]:
+    results: dict = google_nearby_search(location, radius, keyword, type)
+    return list(map(result_to_location, results))
 
 
 
 
 def visualize_locations(locations):
     # Extract latitude, longitude, and address of each location
-    latitudes = [location['location']['lat'] for location in locations]
-    longitudes = [location['location']['lng'] for location in locations]
-    names = [location['name'] for location in locations]
-    addresses = [location['address'] for location in locations]
+    latitudes = [location.latitude for location in locations]
+    longitudes = [location.longitude for location in locations]
+    names = [location.label for location in locations]
 
     # Plot the locations on a full mesh graph
     plt.figure(figsize=(15, 15))
     plt.scatter(longitudes, latitudes, color='red', marker='o')
     for i, txt in enumerate(names):
-        plt.annotate(txt + '\n' + addresses[i].split(",")[0], (longitudes[i], latitudes[i]))
+        plt.annotate(txt, (longitudes[i], latitudes[i]))
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.title('Costa Coffee Locations')
     plt.grid(True)
     plt.show()
 
-def create_full_mesh_graph(locations, api_key):
+def create_full_mesh_graph(locations, api_key = GOOGLE_API_KEY):
     G = nx.Graph()
-
-    # Iterate through each pair of locations
     for i in range(len(locations)):
         for j in range(i + 1, len(locations)):
-            origin = f"{locations[i]['location']['lat']},{locations[i]['location']['lng']}"
-            destination = f"{locations[j]['location']['lat']},{locations[j]['location']['lng']}"
+            origin = f"{locations[i].latitude},{locations[i].longitude}"
+            destination = f"{locations[j].latitude},{locations[j].longitude}"
             directions = get_directions(api_key, origin, destination)
             if directions:
                 parsed_graph = parse_directions(directions)
-                G.add_edges_from(parsed_graph.edges())
+                for edge in parsed_graph.edges():
+                    G.add_edge(locations[i], locations[j], path=list(parsed_graph.edges(edge)))
     return G
+
+def draw_full_graph(G):
+    pos = {node: (node.longitude, node.latitude) for node in G.nodes()}
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(G.edges())))
+
+    plt.figure(figsize=(10, 10))
+    for i, (u, v, data) in enumerate(G.edges(data=True)):
+        path = data['path']
+        edge_pos = [(point[1], point[0]) for segment in path for point in segment]
+        xs, ys = zip(*edge_pos)
+        plt.plot(xs, ys, color=colors[i])
+
+    plt.scatter([pos[node][0] for node in pos], [pos[node][1] for node in pos], color='red')
+    for node in pos:
+        plt.annotate(node.label, (pos[node][0], pos[node][1]))
+
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.title('Full Mesh Network of Roads')
+    plt.grid(True)
+    plt.show()
