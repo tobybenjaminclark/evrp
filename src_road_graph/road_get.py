@@ -1,3 +1,5 @@
+from typing import Generator
+
 import requests
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -5,6 +7,15 @@ import polyline as pl
 from functools import reduce
 from constants import GOOGLE_API_KEY
 import math
+
+
+meters: type = type("meters", (), {})
+
+
+# Function to chunk list into sublists of given size
+def chunk_list(locations: list[tuple[float, float]], chunk_size: int = 512) -> Generator[list[tuple[float, float]], None, None]:
+    for index in range(0, len(locations), chunk_size): yield locations[index : index + chunk_size]
+
 
 # Convert 2 Coordinatea into a distance (in metres)
 def haversine(coord1, coord2):
@@ -15,7 +26,9 @@ def haversine(coord1, coord2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return 6387000 * c
 
-meters: type = type("meters", (), {})
+
+
+
 
 class RouteStep():
     def __init__(self, _encoded_polyline: str, _dist: meters):
@@ -30,16 +43,10 @@ class RouteStep():
         polyline = self.polyline
         locations = [(polyline[i], polyline[i + 1]) for i in range(len(polyline) - 1)]
 
-        # Function to chunk list into sublists of given size
-        def chunk_list(lst, chunk_size):
-            for i in range(0, len(lst), chunk_size):
-                yield lst[i:i + chunk_size]
-
-        chunk_size = 512
         elevation_data = []
 
         # Process each chunk of locations
-        for chunk in chunk_list(locations, chunk_size):
+        for chunk in chunk_list(locations, 512):
             # Convert the list of tuples into the required format for the URL
             locations_str = '|'.join([f'{lat[0]},{lng[0]}' for (lat, lng) in chunk])
 
