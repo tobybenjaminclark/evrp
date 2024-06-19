@@ -1,25 +1,19 @@
+from typing import Tuple, List, Any
+
 from evrp_route_step import RouteStep, parse_step
 from evrp_route_utils import meters, approximate_distance_from_polyline
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import Normalize
+from scipy.interpolate import interp1d
 
-
-def pastel_colors_generator():
-    pastel_colors = ['#FFB6C1', '#FFDAB9', '#B0E0E6', '#98FB98', '#FFA07A',
-                     '#FFAEB9', '#FFC0CB', '#FFD700', '#FFDEAD', '#FFE4B5',
-                     '#FFE4C4', '#FFE4E1', '#FFEBCD', '#FFEFD5', '#FFF0F5',
-                     '#FFF5EE', '#FFF8DC', '#FFFACD', '#FFFAF0', '#FFFAFA',
-                     '#F0FFF0', '#F5FFFA', '#FAEBD7', '#FAF0E6', '#FAFAD2',
-                     '#FDF5E6', '#FF6347', '#FF69B4', '#FF7F50', '#FF8247',
-                     '#FF8C00', '#FFA500', '#FFB5C5', '#FFD700', '#FFDAB9',
-                     '#FFDEAD', '#FFE4B5', '#FFE4C4', '#FFE4E1', '#FFEBCD',
-                     '#FFEFD5', '#FFEFDB', '#FFF0F5', '#FFF5EE', '#FFF8DC',
-                     '#FFFACD', '#FFFAF0', '#FFFAFA', '#FFFF00', '#FFFFE0',
-                     '#FFFFF0', '#FFFFFF']
+def bright_colors_generator():
+    less_bright_colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9', '#ffffff', '#000000']
 
     index = 0
     while True:
-        yield pastel_colors[index % len(pastel_colors)]
+        yield less_bright_colors[index % len(less_bright_colors)]
         index += 1
 
 
@@ -34,26 +28,49 @@ class Route():
 
         self.plot_route_data()
 
-    def plot_route_data(self) -> None:
-        # Generate a Polyline of coordinates representing the entire route.
+    def plot_route_data(self, rolling_average_length: int = 30) -> None:
+        """
+        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
+        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
+        color coding for each step.
+
+        :return:    None
+        """
+
+        # Generate a Polyline of coordinates representing the entire route
         polyline = [point for step in self.steps for point in step.polyline]
 
         # Derive altitude series and cumulative distances from this polyline (and step data)
-        altitude_series = [(point, altitude)[1] for step in self.steps for point, altitude in step.locdata]
-        distances = [approximate_distance_from_polyline(polyline[0:n]) for n in range(0, len(polyline))]
+        altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
+        distances: tuple[list[Any], list[Any]] = [approximate_distance_from_polyline(polyline[0:n]) for n in range(0, len(polyline))]
+
+        # Perform linear interpolation
+        f_interp = interp1d(distances, altitude_series, kind='linear')
+
+        # Create a new set of distances for the smoothed line (with higher resolution)
+        smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances) * 10)
+        smoothed_altitudes = f_interp(smoothed_distances)
+
+        # Apply a rolling average to further smooth the data
+        rolling_window = rolling_average_length  # 30 meters rolling average
+        smoothed_altitudes_rolling = np.convolve(smoothed_altitudes, np.ones(rolling_window) / rolling_window, mode='same')
 
         # Calculate the widths for each bar
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 15))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 20))  # Add one more axis for the heatmap
 
         # Plot Altitude vs Distance on the first subplot
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
         ax1.set_xlabel('Distance (meters)')
         ax1.set_ylabel('Altitude (meters)')
 
+        # Ensure axis starts at (0, 0)
+        ax1.set_xlim(0, max(distances))
+        ax1.set_ylim(min(altitude_series), max(altitude_series))
+
         # Initialize the pastel color generator
-        color_gen = pastel_colors_generator()
+        color_gen = bright_colors_generator()
 
         # Iterate through each step and plot bars with corresponding colors
         for i, step in enumerate(self.steps):
@@ -66,13 +83,13 @@ class Route():
                     label=f'Step {i + 1} - {self.steps[i].instructions}')
 
         # Plot the linear path (polyline) for the entire route
-        ax1.plot(distances, altitude_series, label='Linear Path', color='red')
+        ax1.plot(smoothed_distances[::10], smoothed_altitudes_rolling[::10], label='Smoothed Linear Path', color='blue')
 
         ax1.legend()
         ax1.grid(True)
 
-        ax1.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{x:.0f}m'))
-        ax1.yaxis.set_major_formatter(FuncFormatter(lambda y, pos: f'{y:.0f}m'))
+        ax1.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+        ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
         # Plot Route on a map in the second subplot
         ax2.set_title('Route Plot')
@@ -80,19 +97,20 @@ class Route():
         ax2.set_ylabel('Latitude')
 
         # Initialize the pastel color generator again for the route plot
-        color_gen = pastel_colors_generator()
+        color_gen = bright_colors_generator()
 
         # Iterate through each step and plot segments of the polyline with corresponding colors
         for i, step in enumerate(self.steps):
             color = next(color_gen)  # Get the next pastel color
             step_latitudes = [point[0] for point in step.polyline]
             step_longitudes = [point[1] for point in step.polyline]
-            ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color, label=f'Step {i + 1} - {self.steps[i].instructions}')
+            ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
+                     label=f'Step {i + 1} - {self.steps[i].instructions}')
 
-        # Set the aspect ratio to 1:1
         ax2.set_aspect('equal', adjustable='datalim')
         ax2.legend()
         ax2.grid(True)
+
 
         plt.tight_layout()
         plt.show()
