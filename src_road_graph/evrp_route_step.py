@@ -3,7 +3,7 @@ from src_google_api import get_elevation_data
 from polyline import decode as polyline_decode
 from typing import Generator as generator
 from dataclasses import dataclass
-
+import re
 
 @dataclass
 class RouteStep():
@@ -62,7 +62,7 @@ def parse_step(step: dict) -> RouteStep:
     """
 
     _temp: RouteStep = RouteStep(step['polyline']['points'], step['distance']['value'])
-    _temp.instructions = step['html_instructions']
+    _temp.instructions = re.sub('<.*?>', '', step['html_instructions'])
     return _temp
 
 

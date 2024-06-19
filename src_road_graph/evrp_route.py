@@ -20,8 +20,9 @@ def bright_colors_generator():
 class Route():
 
 
-    def __init__(self, response: dict):
-        print(response)
+    def __init__(self, response: dict, _origin: str, _destination: str):
+        self.origin = _origin
+        self.destination = _destination
         self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
         for step in self.steps:
             print(str(step) + "\n")
@@ -106,6 +107,16 @@ class Route():
             step_longitudes = [point[1] for point in step.polyline]
             ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
                      label=f'Step {i + 1} - {self.steps[i].instructions}')
+
+        # Label the origin at the first point
+        origin_latitude = self.steps[0].polyline[0][0]
+        origin_longitude = self.steps[0].polyline[0][1]
+        ax2.text(origin_longitude, origin_latitude, self.origin.split(",")[0], fontsize=14, color='black', ha='center', va='bottom')
+
+        # Label the destination at the last point
+        destination_latitude = self.steps[-1].polyline[-1][0]
+        destination_longitude = self.steps[-1].polyline[-1][1]
+        ax2.text(destination_longitude, destination_latitude, self.destination.split(",")[0], fontsize=14, color='black', ha='center', va='bottom')
 
         ax2.set_aspect('equal', adjustable='datalim')
         ax2.legend()
