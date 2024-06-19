@@ -38,35 +38,37 @@ class Route():
         :return:    None
         """
 
-        # Generate a Polyline of coordinates representing the entire route
-        polyline = [point for step in self.steps for point in step.polyline]
+        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
+        superpolyline = [point for step in self.steps for point in step.polyline]
 
-        # Derive altitude series and cumulative distances from this polyline (and step data)
+        # Derive altitude series and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
-        distances: tuple[list[Any], list[Any]] = [approximate_distance_from_polyline(polyline[0:n]) for n in range(0, len(polyline))]
+        distances = [approximate_distance_from_polyline(superpolyline[0:n]) for n in range(0, len(superpolyline))]
 
-        # Perform linear interpolation
+        # Perform linear interpolation (filling in gaps between samples linearly)
         f_interp = interp1d(distances, altitude_series, kind='linear')
 
         # Create a new set of distances for the smoothed line (with higher resolution)
         smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances) * 10)
         smoothed_altitudes = f_interp(smoothed_distances)
 
-        # Apply a rolling average to further smooth the data
-        rolling_window = rolling_average_length  # 30 meters rolling average
-        smoothed_altitudes_rolling = np.convolve(smoothed_altitudes, np.ones(rolling_window) / rolling_window, mode='same')
+        # Apply a rolling average to further smooth the data, according to the rolling average length.
+        rolling_window = rolling_average_length
+        smoothed_altitudes_rolling = np.convolve(smoothed_altitudes, np.ones(rolling_window) / rolling_window,
+                                                 mode='same')
 
-        # Calculate the widths for each bar
+        # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 20))  # Add one more axis for the heatmap
+        # Create a figure with two subplots: one for altitude vs distance and one for the route plot
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 20))
 
-        # Plot Altitude vs Distance on the first subplot
+        # Plot Altitude vs Distance on the first subplot (altitude series over distance)
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
         ax1.set_xlabel('Distance (meters)')
         ax1.set_ylabel('Altitude (meters)')
 
-        # Ensure axis starts at (0, 0)
+        # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and altitudes
         ax1.set_xlim(0, max(distances))
         ax1.set_ylim(min(altitude_series), max(altitude_series))
 
@@ -75,20 +77,23 @@ class Route():
 
         # Iterate through each step and plot bars with corresponding colors
         for i, step in enumerate(self.steps):
-            start_idx = sum(len(s.polyline) for s in self.steps[:i])  # Start index for current step
-            end_idx = start_idx + len(step.polyline)  # End index for current step
-            color = next(color_gen)  # Get the next pastel color
+            start_idx = sum(len(s.polyline) for s in self.steps[:i])
+            end_idx = start_idx + len(step.polyline)
+            color = next(color_gen)
 
+            # Plot the altitude data for this step as bars
             ax1.bar(distances[start_idx:end_idx], altitude_series[start_idx:end_idx],
                     width=widths[start_idx:end_idx], align='edge', color=color,
                     label=f'Step {i + 1} - {self.steps[i].instructions}')
 
-        # Plot the linear path (polyline) for the entire route
+        # Plot the smoothed linear path (polyline) for the entire route
         ax1.plot(smoothed_distances[::10], smoothed_altitudes_rolling[::10], label='Smoothed Linear Path', color='blue')
 
+        # Add legend and grid to the first subplot
         ax1.legend()
         ax1.grid(True)
 
+        # Format the x and y axis labels to display distances and altitudes in meters
         ax1.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
         ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
@@ -108,20 +113,21 @@ class Route():
             ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
                      label=f'Step {i + 1} - {self.steps[i].instructions}')
 
-        # Label the origin at the first point
-        origin_latitude = self.steps[0].polyline[0][0]
-        origin_longitude = self.steps[0].polyline[0][1]
-        ax2.text(origin_longitude, origin_latitude, self.origin.split(",")[0], fontsize=14, color='black', ha='center', va='bottom')
+        # Label the origin at the first point of the route
+        ax2.text(self.steps[0].polyline[0][1], self.steps[0].polyline[0][0], self.origin.split(",")[0], fontsize=14, color='black', ha='center',
+                 va='bottom')
 
-        # Label the destination at the last point
-        destination_latitude = self.steps[-1].polyline[-1][0]
-        destination_longitude = self.steps[-1].polyline[-1][1]
-        ax2.text(destination_longitude, destination_latitude, self.destination.split(",")[0], fontsize=14, color='black', ha='center', va='bottom')
+        # Label the destination at the last point of the route
+        ax2.text(self.steps[-1].polyline[-1][1], self.steps[-1].polyline[-1][0], self.destination.split(",")[0], fontsize=14,
+                 color='black', ha='center', va='bottom')
 
+        # Set the aspect ratio of the plot to be equal
         ax2.set_aspect('equal', adjustable='datalim')
         ax2.legend()
         ax2.grid(True)
 
-
+        # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
+
+        # Display the plots
         plt.show()
