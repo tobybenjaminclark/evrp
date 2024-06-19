@@ -24,15 +24,17 @@ def pastel_colors_generator():
 
 
 class Route():
+
+
     def __init__(self, response: dict):
         print(response)
         self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
         for step in self.steps:
             print(str(step) + "\n")
 
-        self.plot_altitude_distance_series()
+        self.plot_route_data()
 
-    def plot_altitude_distance_series(self) -> None:
+    def plot_route_data(self) -> None:
         # Generate a Polyline of coordinates representing the entire route.
         polyline = [point for step in self.steps for point in step.polyline]
 
@@ -43,7 +45,12 @@ class Route():
         # Calculate the widths for each bar
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
-        plt.figure(figsize=(30, 15))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 15))
+
+        # Plot Altitude vs Distance on the first subplot
+        ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
+        ax1.set_xlabel('Distance (meters)')
+        ax1.set_ylabel('Altitude (meters)')
 
         # Initialize the pastel color generator
         color_gen = pastel_colors_generator()
@@ -54,21 +61,38 @@ class Route():
             end_idx = start_idx + len(step.polyline)  # End index for current step
             color = next(color_gen)  # Get the next pastel color
 
-            plt.bar(distances[start_idx:end_idx], altitude_series[start_idx:end_idx],
+            ax1.bar(distances[start_idx:end_idx], altitude_series[start_idx:end_idx],
                     width=widths[start_idx:end_idx], align='edge', color=color,
-                    label=f'Step {i + 1} - {self.steps[i].instructions}')  # Adjust label as needed
+                    label=f'Step {i + 1} - {self.steps[i].instructions}')
 
         # Plot the linear path (polyline) for the entire route
-        plt.plot(distances, altitude_series, label='Linear Path', color='red')
+        ax1.plot(distances, altitude_series, label='Linear Path', color='red')
 
-        plt.xlabel('Distance (meters)')
-        plt.ylabel('Altitude (meters)')
-        plt.title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
-        plt.legend()
-        plt.grid(True)
+        ax1.legend()
+        ax1.grid(True)
 
-        plt.gca().xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{x:.0f}m'))
-        plt.gca().yaxis.set_major_formatter(FuncFormatter(lambda y, pos: f'{y:.0f}m'))
+        ax1.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+        ax1.yaxis.set_major_formatter(FuncFormatter(lambda y, pos: f'{y:.0f}m'))
+
+        # Plot Route on a map in the second subplot
+        ax2.set_title('Route Plot')
+        ax2.set_xlabel('Longitude')
+        ax2.set_ylabel('Latitude')
+
+        # Initialize the pastel color generator again for the route plot
+        color_gen = pastel_colors_generator()
+
+        # Iterate through each step and plot segments of the polyline with corresponding colors
+        for i, step in enumerate(self.steps):
+            color = next(color_gen)  # Get the next pastel color
+            step_latitudes = [point[0] for point in step.polyline]
+            step_longitudes = [point[1] for point in step.polyline]
+            ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color, label=f'Step {i + 1} - {self.steps[i].instructions}')
+
+        # Set the aspect ratio to 1:1
+        ax2.set_aspect('equal', adjustable='datalim')
+        ax2.legend()
+        ax2.grid(True)
 
         plt.tight_layout()
         plt.show()

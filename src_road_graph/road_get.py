@@ -13,4 +13,4 @@ def get_directions(origin, destination):
 
 
 if(__name__ == '__main__'):
-    get_directions("Amigos Pizza, Lenton, Nottingham", "Rock City, Nottingham")
+    get_directions("City of Caves, Garner's Hill, Nottingham NG1 1HF", "Nando's Nottingham - Market Square, 12 Angel Row, Nottingham NG1 6HL")
