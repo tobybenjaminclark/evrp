@@ -28,6 +28,7 @@ def get_avg_speed_limit(coords):
     # Extract the speed limits along the route
     speed_limits = []
 
+    # TODO: Rewrite
     for link in response['RouteLinks']:
         speed_limit_info = link['attributes'].get('SPEED_LIMITS_FCN', [])
         if speed_limit_info:
