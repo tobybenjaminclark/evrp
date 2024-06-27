@@ -1,12 +1,54 @@
 from typing import Tuple, List, Any
 
 from evrp_route_step import RouteStep, parse_step
-from evrp_route_utils import meters, approximate_distance_from_polyline
+from evrp_route_utils import meters, approximate_distance_from_polyline, haversine
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize
 from scipy.interpolate import interp1d
+import math
+
+def haversine(lon1, lat1, lon2, lat2):
+    """
+    Calculate the initial and final bearings in degrees between two points
+    on the earth (specified in decimal degrees)
+    """
+    # Convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    # Calculate initial and final bearings
+    y = math.sin(dlon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+    initial_bearing = math.atan2(y, x)
+
+    initial_bearing = math.degrees(initial_bearing)
+    initial_bearing = (initial_bearing + 360) % 360
+
+    return initial_bearing
+
+def construct_bearing_list(polyline):
+    """
+    Constructs a list of bearings (in degrees) between consecutive points in a polyline
+    represented by a list of tuples (longitude, latitude).
+    """
+    bearing_list = []
+
+    for i in range(len(polyline) - 1):
+        lon1, lat1 = polyline[i]
+        lon2, lat2 = polyline[i + 1]
+
+        # Calculate the initial bearing using the haversine function
+        bearing = haversine(lon1, lat1, lon2, lat2)
+
+        # Add the bearing to the list
+        bearing_list.append(bearing)
+
+    return bearing_list
 
 def bright_colors_generator():
     less_bright_colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9', '#ffffff', '#000000']
@@ -33,7 +75,7 @@ class Route():
         """
         Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
         average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
-        color coding for each step.
+        color coding for each step and visualization of angle list.
 
         :return:                    None
         :rolling_average_length:    Window size for rolling average calculation (bigger is smoother)
@@ -41,6 +83,7 @@ class Route():
 
         # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
         superpolyline = [point for step in self.steps for point in step.polyline]
+        angle_list = construct_bearing_list(superpolyline)
 
         # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
@@ -63,7 +106,7 @@ class Route():
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
         # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(30, 30))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(50, 30))
 
         # Plot Altitude vs Distance on the first subplot (altitude series over distance)
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
@@ -159,6 +202,18 @@ class Route():
         ax3.set_aspect('equal', adjustable='datalim')
         ax3.legend()
         ax3.grid(True)
+
+        # Plot Angle List on the fourth subplot (ax4)
+        ax4.set_title('Angle List')
+        ax4.set_xlabel('Segment Index')
+        ax4.set_ylabel('Angle (degrees)')
+
+        # Plot the angle list
+        ax4.plot(range(len(angle_list)), angle_list, marker='o', linestyle='-', color='green', label='Angles')
+
+        # Add legend and grid to the fourth subplot
+        ax4.legend()
+        ax4.grid(True)
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
