@@ -35,14 +35,16 @@ class Route():
         average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
         color coding for each step.
 
-        :return:    None
+        :return:                    None
+        :rolling_average_length:    Window size for rolling average calculation (bigger is smoother)
         """
 
         # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
         superpolyline = [point for step in self.steps for point in step.polyline]
 
-        # Derive altitude series and cumulative distances from this super-polyline (and step data)
+        # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
+        speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
         distances = [approximate_distance_from_polyline(superpolyline[0:n]) for n in range(0, len(superpolyline))]
 
         # Perform linear interpolation (filling in gaps between samples linearly)
@@ -60,8 +62,8 @@ class Route():
         # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
-        # Create a figure with two subplots: one for altitude vs distance and one for the route plot
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(30, 20))
+        # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(30, 30))
 
         # Plot Altitude vs Distance on the first subplot (altitude series over distance)
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
@@ -97,10 +99,40 @@ class Route():
         ax1.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
         ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
-        # Plot Route on a map in the second subplot
-        ax2.set_title('Route Plot')
-        ax2.set_xlabel('Longitude')
-        ax2.set_ylabel('Latitude')
+        # Plot Speed vs Distance on the second subplot (speed series over distance)
+        ax2.set_title('Speed vs Distance')
+        ax2.set_xlabel('Distance (meters)')
+        ax2.set_ylabel('Speed (km/h)')
+
+        # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and speeds
+        ax2.set_xlim(0, max(distances))
+        ax2.set_ylim(min(speed_series), max(speed_series))
+
+        # Initialize the pastel color generator again for the speed plot
+        color_gen = bright_colors_generator()
+
+        # Iterate through each step and plot bars with corresponding colors
+        for i, step in enumerate(self.steps):
+            start_idx = sum(len(s.polyline) for s in self.steps[:i])
+            end_idx = start_idx + len(step.polyline)
+            color = next(color_gen)
+
+            # Plot the speed data for this step as bars
+            ax2.bar(distances[start_idx:end_idx], speed_series[start_idx:end_idx],
+                    width=widths[start_idx:end_idx], align='edge', color=color,
+                    label=f'Step {i + 1} - {self.steps[i].instructions}')
+
+        # Add legend and grid to the second subplot
+        ax2.legend()
+        ax2.grid(True)
+
+        # Format the x axis labels to display distances in meters
+        ax2.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+
+        # Plot Route on a map in the third subplot
+        ax3.set_title('Route Plot')
+        ax3.set_xlabel('Longitude')
+        ax3.set_ylabel('Latitude')
 
         # Initialize the pastel color generator again for the route plot
         color_gen = bright_colors_generator()
@@ -110,21 +142,23 @@ class Route():
             color = next(color_gen)  # Get the next pastel color
             step_latitudes = [point[0] for point in step.polyline]
             step_longitudes = [point[1] for point in step.polyline]
-            ax2.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
+            ax3.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
                      label=f'Step {i + 1} - {self.steps[i].instructions}')
 
         # Label the origin at the first point of the route
-        ax2.text(self.steps[0].polyline[0][1], self.steps[0].polyline[0][0], self.origin.split(",")[0], fontsize=14, color='black', ha='center',
+        ax3.text(self.steps[0].polyline[0][1], self.steps[0].polyline[0][0], self.origin.split(",")[0], fontsize=14,
+                 color='black', ha='center',
                  va='bottom')
 
         # Label the destination at the last point of the route
-        ax2.text(self.steps[-1].polyline[-1][1], self.steps[-1].polyline[-1][0], self.destination.split(",")[0], fontsize=14,
+        ax3.text(self.steps[-1].polyline[-1][1], self.steps[-1].polyline[-1][0], self.destination.split(",")[0],
+                 fontsize=14,
                  color='black', ha='center', va='bottom')
 
         # Set the aspect ratio of the plot to be equal
-        ax2.set_aspect('equal', adjustable='datalim')
-        ax2.legend()
-        ax2.grid(True)
+        ax3.set_aspect('equal', adjustable='datalim')
+        ax3.legend()
+        ax3.grid(True)
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
