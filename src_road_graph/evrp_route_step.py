@@ -14,7 +14,6 @@ class RouteStep():
     locdata: list[tuple[tuple[float, float], meters]]
 
 
-
     def __init__(self, _encoded_polyline: str, _dist: meters, _instructions: str):
         """
         Constructor Method to initialize a RouteStep object from Google Directions API data.
