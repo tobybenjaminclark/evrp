@@ -13,5 +13,5 @@ def get_directions(origin, destination):
 
 
 if(__name__ == '__main__'):
-    get_directions( "210 Great Knightleys, Basildon, Essex", "McDonalds Festival Lesiure, Basildon, Essex")
+    get_directions( "Amigos Pizza, Derby Road, Nottingham", "Rock City, Nottingham")
 

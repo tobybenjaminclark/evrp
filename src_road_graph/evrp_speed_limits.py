@@ -9,6 +9,7 @@ def get_avg_speed_limit(coords):
     # Send over the query to get the road speeds.
     query = f'https://rme.api.here.com/2/matchroute.json?routemode=car&app_id={app_id}&apiKey={apikey}&attributes=SPEED_LIMITS_FCn(*)'
     data = 'latitude,longitude\n' + '\n'.join([f'{lat:.5f},{lon:.5f}' for lat, lon in coords])
+    print(query)
     response = requests.post(query, data=data)
 
     # Hopefully this will be successful - if not, we're screwed :)
@@ -18,6 +19,7 @@ def get_avg_speed_limit(coords):
     # Parse the response as JSON, and extract the speed limit data. We're using `max` here as it provides to/from
     # data - which can sometimes be zero - using max averts this and fixes it.
     response_json = response.json()
+    print(response_json)
     speed_limits = [
         max(int(limit['TO_REF_SPEED_LIMIT']), int(limit['FROM_REF_SPEED_LIMIT']))
         for link in response_json.get('RouteLinks', [])
