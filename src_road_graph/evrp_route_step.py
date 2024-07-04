@@ -30,13 +30,11 @@ class RouteStep():
 
         # Calculate speed limits along polyline
         self.road_speed = get_avg_speed_limit(self.polyline)
-        print(_instructions)
         print("SPEED_LIMIT:", self.road_speed, "\n")
 
         self.calc_dist = approximate_distance_from_polyline(self.polyline)
         self.elevation_data = self.approximate_elevation_series()
         self.locdata = list(zip(self.polyline, self.elevation_data))
-        for n in self.locdata: print(n)
 
 
 
@@ -55,7 +53,6 @@ class RouteStep():
         chunk_list: generator[list[tuple, tuple], None, None]
         chunk_list = lambda locations: (locations[index : index + 255] for index in range(0, len(locations), 255))
         for chunk in chunk_list(self.polyline):
-            print(chunk)
             a = get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk]))
             elevation_data.extend(a)
         return list(map(lambda d: d['elevation'], elevation_data))

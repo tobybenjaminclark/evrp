@@ -119,7 +119,6 @@ def google_nearby_search(location: tuple[float, float], radius: int, keyword = "
         # Send request to Google Places API
         response = requests.get(base_url, params=params)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-        print(response.json())
         results = response.json().get('results', [])
         return results
 
@@ -131,13 +130,11 @@ def google_nearby_search(location: tuple[float, float], radius: int, keyword = "
 def get_elevation_data(locations_str):
     # Construct the request URL
     request_url = f'https://maps.googleapis.com/maps/api/elevation/json?locations={locations_str}&key={GOOGLE_API_KEY}'
-    print(request_url)
 
 
     try:
         # Make the request to the Elevation API
         response = requests.get(request_url)
-        print(response.json())
         # Check if the request was successful
         if response.status_code == 200:
             elevation_data_chunk = response.json().get('results', [])
