@@ -9,6 +9,7 @@ from matplotlib.colors import Normalize
 from scipy.interpolate import interp1d
 import math
 import statistics
+import itertools
 
 # Constants
 g = 9.81  # Acceleration due to gravity in m/s^2
@@ -107,19 +108,25 @@ v_max = max_speed(lat1, lon1, lat2, lon2, lat3, lon3)
 print(v_max * 3.6)  # in meters per second
 
 
-def maximum_safe_speed(polyline, arcs_per_side = 2):
+def maximum_safe_speed(polyline, arcs_per_side = 3):
     max_speeds = []
-    for i in range(0, len(polyline) - 3, 1):
-        (p11, p12), (p21, p22), (p31, p32), (p41, p42) = polyline[i], polyline[i + 1], polyline[i + 2], polyline[i + 3]
+    # Calculate main body (where both sides are reachable)
+    for i in range(arcs_per_side - 1, len(polyline) - arcs_per_side):
 
-        arc1 = max_speed(p11, p12, p21, p22, p31, p32) * 3.6
-        arc2 = max_speed(p11, p12, p21, p22, p41, p42) * 3.6
-        arc3 = max_speed(p11, p12, p31, p32, p41, p42) * 3.6
-        arc4 = max_speed(p21, p22, p31, p32, p41, p42) * 3.6
-        arcs = [arc1, arc2, arc3, arc4]
-        max_speeds.append(statistics.mean(arcs))
+        c1 = [polyline[i + _i] for _i in filter(lambda v: v != 0, range(-arcs_per_side, 0))]
+        c2 = [polyline[i + _i] for _i in filter(lambda v: v != 0, range(0, arcs_per_side))]
+        combos = list(itertools.product(c1, c2))
 
-    return [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]] + [max_speeds[len(max_speeds) - 1]]
+        b1, b2 = polyline[i]
+        max_speeds.append(statistics.mean([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos]))
+
+    for x in range(0, arcs_per_side):
+        max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]]
+
+    print(len(max_speeds))
+    print(len(polyline))
+    max_speeds.pop(0)
+    return max_speeds
 
 
 def bright_colors_generator():
