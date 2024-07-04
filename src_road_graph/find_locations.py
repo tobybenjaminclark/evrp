@@ -33,9 +33,6 @@ def find_locations(location: tuple[float, float], radius: int, keyword: str = ""
     results: dict = google_nearby_search(location, radius, keyword, type)
     return list(map(result_to_location, results))
 
-
-
-
 def visualize_locations(locations):
     # Extract latitude, longitude, and address of each location
     latitudes = [location.latitude for location in locations]

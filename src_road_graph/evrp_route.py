@@ -10,6 +10,10 @@ from scipy.interpolate import interp1d
 import math
 import statistics
 
+# Constants
+g = 9.81  # Acceleration due to gravity in m/s^2
+mu = 0.3  # Coefficient of friction (example value, adjust as needed)
+R = 6371.0  # Earth's radius in kilometers
 
 def calculate_bearing(pointA, pointB):
     """
@@ -17,6 +21,7 @@ def calculate_bearing(pointA, pointB):
     The formula used is from:
     https://www.movable-type.co.uk/scripts/latlong.html
     """
+
     lat1 = math.radians(pointA[0])
     lat2 = math.radians(pointB[0])
     diffLong = math.radians(pointB[1] - pointA[1])
@@ -47,26 +52,74 @@ def construct_bearing_list(polyline):
         bearing_prev = bearing
     return bearings + [0]
 
+# Function to convert degrees to radians
+def deg_to_rad(deg):
+    return deg * np.pi / 180.0
+
+# Function to convert latitude and longitude to Cartesian coordinates
+def lat_lon_to_cartesian(lat, lon, R):
+    lat, lon = deg_to_rad(lat), deg_to_rad(lon)
+    x = R * np.cos(lat) * np.cos(lon)
+    y = R * np.cos(lat) * np.sin(lon)
+    z = R * np.sin(lat)
+    return np.array([x, y, z])
+
+
+# Function to calculate the radius of the arc from three coordinates
+def calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3):
+    p1 = lat_lon_to_cartesian(lat1, lon1, R)
+    p2 = lat_lon_to_cartesian(lat2, lon2, R)
+    p3 = lat_lon_to_cartesian(lat3, lon3, R)
+
+    # Calculate the lengths of the sides of the triangle formed by p1, p2, and p3
+    a = np.linalg.norm(p2 - p3)
+    b = np.linalg.norm(p1 - p3)
+    c = np.linalg.norm(p1 - p2)
+
+    # Calculate the semi-perimeter
+    s = (a + b + c) / 2
+
+    # Calculate the area of the triangle using Heron's formula
+    area = np.sqrt(s * (s - a) * (s - b) * (s - c))
+
+    # Calculate the circumradius
+    radius = (a * b * c) / (4 * area)
+
+    return radius * 1000  # Convert radius from kilometers to meters
 
 
 
-def maximum_safe_speed(radius, friction_coefficient = 0.7, gravity = 9.8):
-    """
-    Calculate the maximum safe speed a car can make a turn.
+# Function to calculate maximum speed in a turn
+def max_speed(lat1, lon1, lat2, lon2, lat3, lon3, gravity=g, friction_coefficient=mu):
+    turning_radius = calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3)
+    print(f"Turning Radius of {turning_radius}m")
+    return np.sqrt(turning_radius * friction_coefficient * gravity)
 
-    Parameters:
-    radius (float): Radius of the turn in meters.
-    friction_coefficient (float): Coefficient of friction between the tires and the road.
-    gravity (float): Acceleration due to gravity in m/s^2. Default is 9.8 m/s^2.
 
-    Returns:
-    float: Maximum safe speed in km/h.
-    """
-    radius = max(radius, 1.0)
-    speed_m_per_s = math.sqrt(friction_coefficient * gravity * radius)
-    speed_km_per_h = speed_m_per_s * 3.6
-    return speed_km_per_h
+# Example coordinates
+lat1, lon1 = 52.949853, -1.134029
+lat2, lon2 = 52.949988, -1.134151
+lat3, lon3 = 52.950139, -1.134301
 
+# Calculate the maximum speed
+v_max = max_speed(lat1, lon1, lat2, lon2, lat3, lon3)
+
+print(v_max * 3.6)  # in meters per second
+
+
+def maximum_safe_speed(polyline, arcs_per_side = 2):
+    max_speeds = []
+    for i in range(0, len(polyline) - 3, 1):
+        (p11, p12), (p21, p22), (p31, p32), (p41, p42) = polyline[i], polyline[i + 1], polyline[i + 2], polyline[i + 3]
+
+        arc1 = max_speed(p11, p12, p21, p22, p31, p32) * 3.6
+        arc2 = max_speed(p11, p12, p21, p22, p41, p42) * 3.6
+        arc3 = max_speed(p11, p12, p31, p32, p41, p42) * 3.6
+        arc4 = max_speed(p21, p22, p31, p32, p41, p42) * 3.6
+        arcs = [arc1, arc2, arc3, arc4]
+        max_speeds.append(statistics.mean(arcs))
+
+    return [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]] + [max_speeds[len(max_speeds) - 1]]
 
 
 def bright_colors_generator():
@@ -250,12 +303,21 @@ class Route():
         distances_adjusted = [0] + [distances[index] - distances[index - 1] for index in range(1, len(distances))]
 
         angle_list_nonzero = list(map(lambda v: math.radians(v) if v != 0 else math.radians(1), angle_list))
-        max_speed_series = [maximum_safe_speed(distances_adjusted[i] / angle_list_nonzero[i]) for i in range(len(angle_list))]
+        #max_speed_series = [maximum_safe_speed(distances_adjusted[i] / angle_list_nonzero[i]) for i in range(len(angle_list))]
+
+
+        max_speed_series = maximum_safe_speed(superpolyline)
         acc_speed_series = [min(speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
 
+        # Plotting
+        ax5.set_title('Turning Speed Plots')
+        ax5.set_xlabel('Distance')
+        ax5.set_ylabel('Maximum Speed (km/h)')
+
         ax5.set_xlim(0, max(distances))
-        ax5.set_ylim(min(acc_speed_series), max(acc_speed_series))
-        ax5.plot(distances, acc_speed_series, marker='o', linestyle='-', color='green', label='Maximum Speed (km/h)')
+        ax5.set_ylim(0, max(acc_speed_series))
+        ax5.plot(distances, acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
+        ax5.legend()
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
