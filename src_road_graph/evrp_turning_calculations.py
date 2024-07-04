@@ -33,6 +33,13 @@ def calculate_radius(lat1: float, lon1: float, lat2: float, lon2: float, lat3: f
 
 # Function to calculate maximum speed in a turn
 def max_speed(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float, gravity: float = g, friction_coefficient: float = mu) -> float:
+    """
+    Calculate the maximum speed of a singular, 3-point arc in a polyline. Arguments lat1 ... lon3 are the coordinates.
+
+    :param gravity:                 Gravitational constant, defaults to the globally defined constant.
+    :param friction_coefficient:    Friction constant, defaults to the globally defined constant.
+    """
+
     return np.sqrt(calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3) * friction_coefficient * gravity)
 
 
