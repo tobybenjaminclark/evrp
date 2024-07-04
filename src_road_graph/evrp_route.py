@@ -18,21 +18,6 @@ R = 6371.0  # Earth's radius in kilometers
 number_of_calculations = 0
 
 
-
-def angle_difference(angle1, angle2):
-    return (360 - abs(angle1 - angle2)) if abs(angle1 - angle2) > 180 else abs(angle1 - angle2)
-
-def construct_bearing_list(polyline):
-    bearing_prev: float = calculate_bearing(polyline[0], polyline[1])
-    bearings = []
-    for index in range(0, len(polyline) - 1):
-        point_one, point_two = polyline[index], polyline[index + 1]
-        bearing = calculate_bearing(point_one, point_two)
-
-        bearings.append(angle_difference(bearing, bearing_prev))
-        bearing_prev = bearing
-    return bearings + [0]
-
 # Function to convert degrees to radians
 def deg_to_rad(deg):
     return deg * np.pi / 180.0
@@ -77,7 +62,7 @@ def max_speed(lat1, lon1, lat2, lon2, lat3, lon3, gravity=g, friction_coefficien
     number_of_calculations += 1
     return np.sqrt(turning_radius * friction_coefficient * gravity)
 
-def maximum_safe_speed(polyline, arcs_per_side = 10):
+def maximum_safe_speed(polyline, arcs_per_side = 20):
     max_speeds = []
     # Calculate main body (where both sides are reachable)
     for i in range(1, len(polyline) - 1):
