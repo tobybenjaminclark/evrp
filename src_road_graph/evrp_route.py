@@ -1,7 +1,7 @@
 from typing import Tuple, List, Any
 
 from evrp_route_step import RouteStep, parse_step
-from evrp_route_utils import meters, approximate_distance_from_polyline, haversine
+from evrp_route_utils import meters, approximate_distance_from_polyline, haversine, interpolate_polyline
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -108,7 +108,7 @@ v_max = max_speed(lat1, lon1, lat2, lon2, lat3, lon3)
 print(v_max * 3.6)  # in meters per second
 
 
-def maximum_safe_speed(polyline, arcs_per_side = 3):
+def maximum_safe_speed(polyline, arcs_per_side = 30):
     max_speeds = []
     # Calculate main body (where both sides are reachable)
     for i in range(arcs_per_side - 1, len(polyline) - arcs_per_side):
@@ -118,7 +118,7 @@ def maximum_safe_speed(polyline, arcs_per_side = 3):
         combos = list(itertools.product(c1, c2))
 
         b1, b2 = polyline[i]
-        max_speeds.append(statistics.mean([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos]))
+        max_speeds.append(statistics.median([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos]))
 
     for x in range(0, arcs_per_side):
         max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]]
@@ -324,6 +324,16 @@ class Route():
         ax5.set_xlim(0, max(distances))
         ax5.set_ylim(0, max(acc_speed_series))
         ax5.plot(distances, acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
+
+        # Add colors for steps
+        start_idx = 0
+        color_gen = bright_colors_generator()
+        for i, step in enumerate(self.steps):
+            end_idx = start_idx + len(step.polyline) # - 1
+            ax5.plot(distances[start_idx:end_idx], acc_speed_series[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
+                     label=f'Step {i + 1}')
+            start_idx = end_idx
+
         ax5.legend()
 
         # Adjust layout to prevent overlapping of subplots

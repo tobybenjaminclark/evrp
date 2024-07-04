@@ -1,4 +1,6 @@
 from math import cos, sin, sqrt, radians, atan2
+from geopy.distance import distance
+from shapely.geometry import Point, LineString
 
 # Type to denote meters (avoiding unit confusion).
 meters: type = type("meters", (), {})
@@ -32,3 +34,45 @@ def approximate_distance_from_polyline(polyline = None) -> meters:
 
     if polyline == None: raise ValueError
     return sum([haversine(polyline[i], polyline[i + 1]) for i in range(len(polyline) - 1)])
+
+def interpolate_polyline(points):
+    if len(points) < 2:
+        raise ValueError("Input polyline must contain at least two points.")
+
+    interpolated_points = []
+    total_distance = 0.0
+
+    # Iterate through each pair of consecutive points
+    for i in range(len(points) - 1):
+        start = points[i]
+        end = points[i + 1]
+
+        # Calculate the distance between the current pair of points
+        segment_distance = distance(start, end).meters
+
+        # If the segment distance is less than 1 meter, skip interpolation
+        if segment_distance < 1:
+            interpolated_points.append(start)
+            total_distance += segment_distance
+            continue
+
+        # Calculate the number of segments needed to achieve 1 meter apart
+        num_interpolations = int(segment_distance)
+
+        # Calculate the latitude and longitude step sizes
+        lat_step = (end[0] - start[0]) / (num_interpolations + 1)
+        lon_step = (end[1] - start[1]) / (num_interpolations + 1)
+
+        # Interpolate points between start and end
+        for j in range(1, num_interpolations + 1):
+            interpolated_lat = start[0] + j * lat_step
+            interpolated_lon = start[1] + j * lon_step
+            interpolated_points.append((interpolated_lat, interpolated_lon))
+
+        # Add the end point of the segment
+        interpolated_points.append(end)
+
+        # Update total distance with the segment distance
+        total_distance += segment_distance
+
+    return interpolated_points

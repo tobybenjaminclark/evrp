@@ -1,4 +1,4 @@
-from evrp_route_utils import meters, haversine, approximate_distance_from_polyline
+from evrp_route_utils import meters, haversine, approximate_distance_from_polyline, interpolate_polyline
 from src_google_api import get_elevation_data
 from polyline import decode as polyline_decode
 from typing import Generator as generator
@@ -24,7 +24,9 @@ class RouteStep():
 
         self.dist = _dist
         self.instructions = _instructions
-        self.polyline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
+        self.approxiline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
+        self.polyline = interpolate_polyline(self.approxiline)
+
 
         # Calculate speed limits along polyline
         self.road_speed = get_avg_speed_limit(self.polyline)
@@ -51,9 +53,11 @@ class RouteStep():
 
         # The `chunk_list` generator converts a list of polyline points into sublists of maximum size 512.
         chunk_list: generator[list[tuple, tuple], None, None]
-        chunk_list = lambda locations: (locations[index : index + 512] for index in range(0, len(locations), 512))
+        chunk_list = lambda locations: (locations[index : index + 255] for index in range(0, len(locations), 255))
         for chunk in chunk_list(self.polyline):
-            elevation_data.extend(get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk])))
+            print(chunk)
+            a = get_elevation_data('|'.join([f'{lat},{lng}' for (lat, lng) in chunk]))
+            elevation_data.extend(a)
         return list(map(lambda d: d['elevation'], elevation_data))
 
 

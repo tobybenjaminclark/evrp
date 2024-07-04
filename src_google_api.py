@@ -142,11 +142,11 @@ def get_elevation_data(locations_str):
         if response.status_code == 200:
             elevation_data_chunk = response.json().get('results', [])
         else:
-            print(f'Error: {response.status_code}\n{response.text}')
+            print(f'Elevation API Error (1): {response.status_code}\n{response.text}')
             return None
 
     except requests.exceptions.RequestException as e:
-        print(f'Error: {e}')
+        print(f'Elevation API Error (2): {e}\nResponse: {response}')
         return None
 
     return elevation_data_chunk
