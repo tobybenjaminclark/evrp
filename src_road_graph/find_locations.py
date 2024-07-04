@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from src_road_graph.road_get import *
 import requests
 from enum import Enum
-from constants import GOOGLE_API_KEY
+from secrets import GOOGLE_API_KEY
 from src_google_api import *
 import networkx as nx
 import matplotlib.pyplot as plt

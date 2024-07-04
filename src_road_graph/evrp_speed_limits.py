@@ -1,6 +1,6 @@
 import requests
 import statistics
-from constants import RME_API_KEY, RME_APP_ID
+from secrets import RME_API_KEY, RME_APP_ID
 
 def get_avg_speed_limit(coords):
     apikey = RME_API_KEY

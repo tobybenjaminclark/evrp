@@ -1,6 +1,6 @@
 
 from enum import Enum
-from constants import GOOGLE_API_KEY
+from secrets import GOOGLE_API_KEY
 import requests
 
 class PlaceType(Enum):
