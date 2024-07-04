@@ -1,6 +1,7 @@
 import numpy as np
 from statistics import median
 from itertools import product
+from src_road_graph.evrp_route_utils import meters
 from constants import *
 
 
@@ -12,13 +13,21 @@ def deg_to_rad(deg) -> float: return deg * np.pi / 180.0
 
 # Function to convert latitude and longitude to Cartesian coordinates
 def lat_lon_to_cartesian(lat, lon, R):
+    """
+    Function to convert a langitude, longitude coordinate to a cartesian coordinate.
+    """
+
     lat, lon = deg_to_rad(lat), deg_to_rad(lon)
     return np.array([R * np.cos(lat) * np.cos(lon), R * np.cos(lat) * np.sin(lon), R * np.sin(lat)])
 
 
 
-# Function to calculate the radius of the arc from three coordinates
-def calculate_radius(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float) -> float:
+def calculate_radius(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float) -> meters:
+    """
+    Function to calculate the circumradius of a trinagle formed by 3 points on the earths surface. The given coordinates
+    are converted to cartesian coordinates before the triangular area is calculated using Heron's formula.
+    """
+
     p1, p2, p3 = lat_lon_to_cartesian(lat1, lon1, R), lat_lon_to_cartesian(lat2, lon2, R), lat_lon_to_cartesian(lat3, lon3, R)
 
     # Calculate the lengths of the sides of the triangle formed by p1, p2, and p3 and the semi-perimeter (s)
@@ -31,10 +40,9 @@ def calculate_radius(lat1: float, lon1: float, lat2: float, lon2: float, lat3: f
 
 
 
-# Function to calculate maximum speed in a turn
 def max_speed(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, lon3: float, gravity: float = g, friction_coefficient: float = mu) -> float:
     """
-    Calculate the maximum speed of a singular, 3-point arc in a polyline. Arguments lat1 ... lon3 are the coordinates.
+    Function to find the maximum speed of a singular, 3-point arc in a polyline. Arguments lat1 ... lon3 are the coordinates.
 
     :param gravity:                 Gravitational constant, defaults to the globally defined constant.
     :param friction_coefficient:    Friction constant, defaults to the globally defined constant.
