@@ -1,6 +1,9 @@
 from math import cos, sin, sqrt, radians, atan2
 from geopy.distance import distance
 from shapely.geometry import Point, LineString
+import numpy as np
+from statistics import median
+from itertools import product
 import math
 
 # Type to denote meters (avoiding unit confusion).

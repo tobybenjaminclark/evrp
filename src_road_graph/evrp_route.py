@@ -1,90 +1,16 @@
 from typing import Tuple, List, Any
 
 from evrp_route_step import RouteStep, parse_step
-from evrp_route_utils import meters, approximate_distance_from_polyline, haversine, interpolate_polyline, calculate_bearing
+from evrp_route_utils import *
+from evrp_turning_calculations import *
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize
 from scipy.interpolate import interp1d
 import math
-import statistics
+from statistics import median
 import itertools
-
-# Constants
-g = 9.81  # Acceleration due to gravity in m/s^2
-mu = 0.3  # Coefficient of friction (example value, adjust as needed)
-R = 6371.0  # Earth's radius in kilometers
-number_of_calculations = 0
-
-
-# Function to convert degrees to radians
-def deg_to_rad(deg):
-    return deg * np.pi / 180.0
-
-# Function to convert latitude and longitude to Cartesian coordinates
-def lat_lon_to_cartesian(lat, lon, R):
-    lat, lon = deg_to_rad(lat), deg_to_rad(lon)
-    x = R * np.cos(lat) * np.cos(lon)
-    y = R * np.cos(lat) * np.sin(lon)
-    z = R * np.sin(lat)
-    return np.array([x, y, z])
-
-
-# Function to calculate the radius of the arc from three coordinates
-def calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3):
-    p1 = lat_lon_to_cartesian(lat1, lon1, R)
-    p2 = lat_lon_to_cartesian(lat2, lon2, R)
-    p3 = lat_lon_to_cartesian(lat3, lon3, R)
-
-    # Calculate the lengths of the sides of the triangle formed by p1, p2, and p3
-    a = np.linalg.norm(p2 - p3)
-    b = np.linalg.norm(p1 - p3)
-    c = np.linalg.norm(p1 - p2)
-
-    # Calculate the semi-perimeter
-    s = (a + b + c) / 2
-
-    # Calculate the area of the triangle using Heron's formula
-    area = np.sqrt(s * (s - a) * (s - b) * (s - c))
-
-    # Calculate the circumradius
-    radius = (a * b * c) / (4 * area)
-
-    return radius * 1000  # Convert radius from kilometers to meters
-
-
-
-# Function to calculate maximum speed in a turn
-def max_speed(lat1, lon1, lat2, lon2, lat3, lon3, gravity=g, friction_coefficient=mu):
-    turning_radius = calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3)
-    global number_of_calculations
-    number_of_calculations += 1
-    return np.sqrt(turning_radius * friction_coefficient * gravity)
-
-def maximum_safe_speed(polyline, arcs_per_side = 20):
-    max_speeds = []
-    # Calculate main body (where both sides are reachable)
-    for i in range(1, len(polyline) - 1):
-
-        c1 = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
-        c2 = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
-        combos = list(itertools.product(c1, c2))
-
-        b1, b2 = polyline[i]
-
-        try: res: float = statistics.median([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos])
-        except:
-            print([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos])
-            raise Exception
-
-        max_speeds.append(res)
-
-    for x in range(0, 1):
-        max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]] + [max_speeds[len(max_speeds) - 1]]
-
-    max_speeds.pop(0)
-    return max_speeds
 
 
 def bright_colors_generator():
@@ -94,6 +20,7 @@ def bright_colors_generator():
     while True:
         yield less_bright_colors[index % len(less_bright_colors)]
         index += 1
+
 
 
 class Route():

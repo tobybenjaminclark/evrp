@@ -27,11 +27,8 @@ class RouteStep():
         self.approxiline: list[tuple[float, float]] = polyline_decode(_encoded_polyline, 5)
         self.polyline = interpolate_polyline(self.approxiline)
 
-
         # Calculate speed limits along polyline
         self.road_speed = get_avg_speed_limit(self.polyline)
-        print("SPEED_LIMIT:", self.road_speed, "\n")
-
         self.calc_dist = approximate_distance_from_polyline(self.polyline)
         self.elevation_data = self.approximate_elevation_series()
         self.locdata = list(zip(self.polyline, self.elevation_data))
