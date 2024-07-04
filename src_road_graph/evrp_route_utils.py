@@ -1,6 +1,7 @@
 from math import cos, sin, sqrt, radians, atan2
 from geopy.distance import distance
 from shapely.geometry import Point, LineString
+import math
 
 # Type to denote meters (avoiding unit confusion).
 meters: type = type("meters", (), {})
@@ -76,3 +77,24 @@ def interpolate_polyline(points):
         total_distance += segment_distance
 
     return interpolated_points
+
+def calculate_bearing(point_a: tuple[float, float], point_b: tuple[float, float]):
+    """
+    Calculates the bearing between two points on a sphere.
+    The formula used is from: https://www.movable-type.co.uk/scripts/latlong.html
+
+    :param: point_a
+    """
+
+    lat1 = math.radians(point_a[0])
+    lat2 = math.radians(point_b[0])
+    diffLong = math.radians(point_b[1] - point_a[1])
+
+    # Get initial bearing.
+    x: float = math.sin(diffLong) * math.cos(lat2)
+    y: float = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1) * math.cos(lat2) * math.cos(diffLong))
+    initial_bearing: float = math.atan2(x, y)
+
+    # Now we have the initial bearing but math.atan2 return values
+    # from -π to +π so we need to normalize the result to a compass bearing
+    return (math.degrees(initial_bearing) + 360) % 360

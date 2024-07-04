@@ -1,7 +1,7 @@
 from typing import Tuple, List, Any
 
 from evrp_route_step import RouteStep, parse_step
-from evrp_route_utils import meters, approximate_distance_from_polyline, haversine, interpolate_polyline
+from evrp_route_utils import meters, approximate_distance_from_polyline, haversine, interpolate_polyline, calculate_bearing
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,28 +17,7 @@ mu = 0.3  # Coefficient of friction (example value, adjust as needed)
 R = 6371.0  # Earth's radius in kilometers
 number_of_calculations = 0
 
-def calculate_bearing(pointA, pointB):
-    """
-    Calculates the bearing between two points.
-    The formula used is from:
-    https://www.movable-type.co.uk/scripts/latlong.html
-    """
 
-    lat1 = math.radians(pointA[0])
-    lat2 = math.radians(pointB[0])
-    diffLong = math.radians(pointB[1] - pointA[1])
-
-    x = math.sin(diffLong) * math.cos(lat2)
-    y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1) * math.cos(lat2) * math.cos(diffLong))
-
-    initial_bearing = math.atan2(x, y)
-
-    # Now we have the initial bearing but math.atan2 return values
-    # from -π to +π so we need to normalize the result to a compass bearing
-    initial_bearing = math.degrees(initial_bearing)
-    compass_bearing = (initial_bearing + 360) % 360
-
-    return compass_bearing
 
 def angle_difference(angle1, angle2):
     return (360 - abs(angle1 - angle2)) if abs(angle1 - angle2) > 180 else abs(angle1 - angle2)
@@ -101,17 +80,23 @@ def max_speed(lat1, lon1, lat2, lon2, lat3, lon3, gravity=g, friction_coefficien
 def maximum_safe_speed(polyline, arcs_per_side = 10):
     max_speeds = []
     # Calculate main body (where both sides are reachable)
-    for i in range(arcs_per_side - 1, len(polyline) - arcs_per_side):
+    for i in range(1, len(polyline) - 1):
 
-        c1 = [polyline[i + _i] for _i in filter(lambda v: v != 0, range(-arcs_per_side, 0))]
-        c2 = [polyline[i + _i] for _i in filter(lambda v: v != 0, range(0, arcs_per_side))]
+        c1 = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
+        c2 = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
         combos = list(itertools.product(c1, c2))
 
         b1, b2 = polyline[i]
-        max_speeds.append(statistics.median([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos]))
 
-    for x in range(0, arcs_per_side):
-        max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]]
+        try: res: float = statistics.median([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos])
+        except:
+            print([max_speed(a1, a2, b1, b2, c1, c2) * 3.6 for ((a1, a2), (c1, c2)) in combos])
+            raise Exception
+
+        max_speeds.append(res)
+
+    for x in range(0, 1):
+        max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]] + [max_speeds[len(max_speeds) - 1]]
 
     max_speeds.pop(0)
     return max_speeds
@@ -145,9 +130,6 @@ class Route():
 
         # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
         superpolyline = [point for step in self.steps for point in step.polyline]
-        angle_list = construct_bearing_list(superpolyline)
-
-        print(f"Generated {len(angle_list)} bearings for a polyline of length {len(superpolyline)}")
 
         # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
@@ -169,7 +151,7 @@ class Route():
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
         # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
-        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 60))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(70, 40))
 
         # Plot Altitude vs Distance on the first subplot (altitude series over distance)
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
@@ -267,60 +249,28 @@ class Route():
         ax3.legend()
         ax3.grid(True)
 
-        # Plot Angle List on the fourth subplot (ax4)
-        ax4.set_title('Angle List')
-        ax4.set_xlabel('Segment Index')
-        ax4.set_ylabel('Angle (degrees)')
-        ax4.set_xlim(0, max(distances))
-
-        # Plot the angle list
-        ax4.plot(distances, angle_list, marker='o', linestyle='-', color='green', label='Angles')
-        ax4.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
-
-        # Add colors for steps
-        start_idx = 0
-        color_gen = bright_colors_generator()
-        for i, step in enumerate(self.steps):
-            end_idx = start_idx + len(step.polyline) # - 1
-            ax4.plot(distances[start_idx:end_idx], angle_list[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
-                     label=f'Step {i + 1}')
-            start_idx = end_idx
-
-        # Add legend and grid to the fourth subplot
-        ax4.legend()
-        ax4.grid(True)
-
-        ax5.set_title('Turning Speed Plots')
-        ax5.set_xlabel('Distance')
-        ax5.set_ylabel('Maximum Speed (km/h)')
-        distances_adjusted = [0] + [distances[index] - distances[index - 1] for index in range(1, len(distances))]
-
-        angle_list_nonzero = list(map(lambda v: math.radians(v) if v != 0 else math.radians(1), angle_list))
-        #max_speed_series = [maximum_safe_speed(distances_adjusted[i] / angle_list_nonzero[i]) for i in range(len(angle_list))]
-
-
         max_speed_series = maximum_safe_speed(superpolyline)
         acc_speed_series = [min(speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
 
         # Plotting
-        ax5.set_title('Turning Speed Plots')
-        ax5.set_xlabel('Distance')
-        ax5.set_ylabel('Maximum Speed (km/h)')
+        ax4.set_title('Turning Speed Plots')
+        ax4.set_xlabel('Distance')
+        ax4.set_ylabel('Maximum Speed (km/h)')
 
-        ax5.set_xlim(0, max(distances))
-        ax5.set_ylim(0, max(acc_speed_series))
-        ax5.plot(distances, acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
+        ax4.set_xlim(0, max(distances))
+        ax4.set_ylim(0, max(acc_speed_series))
+        ax4.plot(distances, acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
 
         # Add colors for steps
         start_idx = 0
         color_gen = bright_colors_generator()
         for i, step in enumerate(self.steps):
             end_idx = start_idx + len(step.polyline) # - 1
-            ax5.plot(distances[start_idx:end_idx], acc_speed_series[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
+            ax4.plot(distances[start_idx:end_idx], acc_speed_series[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
                      label=f'Step {i + 1}')
             start_idx = end_idx
 
-        ax5.legend()
+        ax4.legend()
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
