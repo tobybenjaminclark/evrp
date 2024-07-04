@@ -15,6 +15,7 @@ import itertools
 g = 9.81  # Acceleration due to gravity in m/s^2
 mu = 0.3  # Coefficient of friction (example value, adjust as needed)
 R = 6371.0  # Earth's radius in kilometers
+number_of_calculations = 0
 
 def calculate_bearing(pointA, pointB):
     """
@@ -93,22 +94,11 @@ def calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3):
 # Function to calculate maximum speed in a turn
 def max_speed(lat1, lon1, lat2, lon2, lat3, lon3, gravity=g, friction_coefficient=mu):
     turning_radius = calculate_radius(lat1, lon1, lat2, lon2, lat3, lon3)
-    print(f"Turning Radius of {turning_radius}m")
+    global number_of_calculations
+    number_of_calculations += 1
     return np.sqrt(turning_radius * friction_coefficient * gravity)
 
-
-# Example coordinates
-lat1, lon1 = 52.949853, -1.134029
-lat2, lon2 = 52.949988, -1.134151
-lat3, lon3 = 52.950139, -1.134301
-
-# Calculate the maximum speed
-v_max = max_speed(lat1, lon1, lat2, lon2, lat3, lon3)
-
-print(v_max * 3.6)  # in meters per second
-
-
-def maximum_safe_speed(polyline, arcs_per_side = 30):
+def maximum_safe_speed(polyline, arcs_per_side = 10):
     max_speeds = []
     # Calculate main body (where both sides are reachable)
     for i in range(arcs_per_side - 1, len(polyline) - arcs_per_side):
@@ -123,8 +113,6 @@ def maximum_safe_speed(polyline, arcs_per_side = 30):
     for x in range(0, arcs_per_side):
         max_speeds = [max_speeds[0]] + max_speeds + [max_speeds[len(max_speeds) - 1]]
 
-    print(len(max_speeds))
-    print(len(polyline))
     max_speeds.pop(0)
     return max_speeds
 
@@ -145,8 +133,6 @@ class Route():
         self.origin = _origin
         self.destination = _destination
         self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
-        for step in self.steps:
-            print(str(step) + "\n")
 
         self.plot_route_data()
 
@@ -338,6 +324,9 @@ class Route():
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
+
+        global number_of_calculations
+        print("NUMBER OF CALCULATIONS IS ", number_of_calculations)
 
         # Display the plots
         plt.show()

@@ -57,7 +57,7 @@ def interpolate_polyline(points):
             continue
 
         # Calculate the number of segments needed to achieve 1 meter apart
-        num_interpolations = int(segment_distance)
+        num_interpolations = int(segment_distance) // 3
 
         # Calculate the latitude and longitude step sizes
         lat_step = (end[0] - start[0]) / (num_interpolations + 1)
