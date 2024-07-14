@@ -1,16 +1,13 @@
 from typing import Tuple, List, Any
 
 from evrp_route_step import RouteStep, parse_step
+from src_energy_model.emodel_basso import *
 from evrp_route_utils import *
 from evrp_turning_calculations import *
-from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize
 from scipy.interpolate import interp1d
-import math
-from statistics import median
-import itertools
+
 
 
 def bright_colors_generator():
@@ -24,7 +21,6 @@ def bright_colors_generator():
 
 
 class Route():
-
 
     def __init__(self, response: dict, _origin: str, _destination: str):
         self.origin = _origin
@@ -49,7 +45,7 @@ class Route():
         distances = [approximate_distance_from_polyline(superpolyline[0:n]) for n in range(0, len(superpolyline))]
 
         # Perform linear interpolation (filling in gaps between samples linearly)
-        f_interp = interp1d(distances, altitude_series, kind='linear')
+        f_interp = interp1d(distances, altitude_series, kind='linear',fill_value="extrapolate")
 
         # Create a new set of distances for the smoothed line (with higher resolution)
         smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances) * 10)
@@ -63,7 +59,7 @@ class Route():
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
 
         # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(70, 40))
+        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 40))
 
         # Plot Altitude vs Distance on the first subplot (altitude series over distance)
         ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
@@ -161,8 +157,13 @@ class Route():
         ax3.legend()
         ax3.grid(True)
 
-        max_speed_series = maximum_safe_speed(superpolyline)
+        max_speed_series = maximum_safe_speed(superpolyline, distances)
+
+        speed_series_interp = interp1d(distances, speed_series, kind='linear', fill_value="extrapolate")
+        max_speed_series_inerp = interp1d(distances, max_speed_series, kind='linear', fill_value="extrapolate")
+
         acc_speed_series = [min(speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
+
 
         # Plotting
         ax4.set_title('Turning Speed Plots')
@@ -184,11 +185,134 @@ class Route():
 
         ax4.legend()
 
+        # Parameters
+        acceleration_rate = 0.82     # m/s^2
+        deceleration_rate = 2.52     # m/s^2
+        time_interval = 1.0         # seconds
+
+        # Simulate the car speed
+        current_speed = 1.0  # m/s
+        current_distance = 0.0
+        interp = interp1d(distances, acc_speed_series, kind='linear', fill_value="extrapolate")
+
+        seconds = [0]
+        speeds = [0]
+        distances_traveled = [0]
+
+        current_second = 0
+        while current_distance < distances[-1]:
+            current_second += time_interval
+            current_distance += current_speed * time_interval
+
+            # Convert km/h to m/s
+            target_speed = interp(current_distance) * (1000 / 3600)
+
+            if current_speed < target_speed:
+                current_speed += acceleration_rate * time_interval
+
+                if current_speed > target_speed: current_speed = target_speed
+
+            elif current_speed > target_speed:
+                current_speed -= deceleration_rate * time_interval
+
+                if current_speed < target_speed: current_speed = target_speed
+
+            speeds.append(current_speed * 3.6)  # Convert m/s to km/h
+            distances_traveled.append(current_distance)
+            seconds.append(current_second)
+
+        # Plot speed
+        ax5.plot(seconds, speeds, label='Speed (km/h)', color='b')
+
+        # Setup the secondary y-axis for distance
+        axTwin = ax5.twinx()
+        axTwin.set_ylabel('Distance (m)')
+        axTwin.plot(seconds, distances_traveled, label='Distance (m)', color='r')
+
+        # Setting limits for both axes
+        ax5.set_ylim(0, max(speeds))
+        ax5.set_xlim(0, max(seconds))
+        axTwin.set_ylim(0, max(distances_traveled))
+
+        # Adding legends
+        ax5.legend(loc='upper left')
+        axTwin.legend(loc='upper right')
+
+        # sampling for gradient?
+        delta_d = 10.0
+
+        pwr_seconds = []
+        pwr_pwrs = []
+
+        interpolated_dist_altitudes = interp1d(distances, altitude_series, kind='linear', fill_value='extrapolate')
+        interpolated_distances = interp1d(seconds, distances_traveled, kind='linear', fill_value="extrapolate")
+        interpolated_speeds = interp1d(seconds, speeds, kind='linear', fill_value="extrapolate")
+        interpolated_altitude = lambda dist: interpolated_dist_altitudes(interpolated_distances(dist))
+
+        for current_second in seconds:
+            current_distance = interpolated_distances(current_second)
+            current_altitude = interpolated_altitude(current_second)
+            current_speed = interpolated_speeds(current_second)
+
+            # Compute altitude at the next step
+            next_distance = current_distance + delta_d
+            next_altitude = interpolated_dist_altitudes(next_distance)
+
+            # Calculate the road gradient using finite differences
+            gradient = (next_altitude - current_altitude) / delta_d
+            gradient_degrees = math.atan(gradient) * (180 / 3.14159)
+
+            # Calculate current speed in (m/s)
+            speed_ms = current_speed * (5 / 18)
+
+            # Compute mechanical power
+            pwr = get_mechanical_power(speed_ms, gradient_degrees)
+
+            # Print or store the result as needed
+            print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
+            print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
+
+            if(np.isnan(pwr)):
+                continue
+
+            pwr_seconds.append(current_second)
+            pwr_pwrs.append(pwr)
+
+        total = 0
+        cumulative = []
+        segment = 1
+        for x in pwr_pwrs:
+            total = total + (x)
+            cumulative.append(total)
+            print(f"Segment {segment}, at {x:.2f} Joules. New total is: {total:.2f} Joules")
+            segment += 1
+
+        print(f"Total Power: {total:.2f} Joules")
+
+
+        ax6.plot(pwr_seconds, pwr_pwrs, marker='', linestyle='-', color='green', label='Mechanical Power')
+
+        # Setup the secondary y-axis for distance
+        ax6Twin = ax6.twinx()
+        ax6Twin.set_ylabel('Distance (m)')
+        ax6Twin.plot(pwr_seconds, cumulative, label='Cumulative', color='r')
+
+        # Setting limits for both axes
+        ax6.set_ylim(min(pwr_pwrs), max(pwr_pwrs))
+        ax6.set_xlim(0, max(pwr_seconds))
+
+        ax6Twin.set_ylim(min(pwr_pwrs), max(cumulative))
+
+        # Adding data labels to the cumulative plot
+        for i, value in enumerate(cumulative):
+            if(i % 10 == 0): ax6Twin.annotate(f'{int(value)/1000} kJ', (pwr_seconds[i], cumulative[i]), textcoords="offset points", xytext=(0, 5), ha='center')
+
+        # Adding legends
+        ax6.legend(loc='upper left')
+        ax6Twin.legend(loc='upper right')
+
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
-
-        global number_of_calculations
-        print("NUMBER OF CALCULATIONS IS ", number_of_calculations)
 
         # Display the plots
         plt.show()

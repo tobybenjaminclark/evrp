@@ -53,7 +53,7 @@ def max_speed(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, l
 
 
 # Find safe speed for a polyline
-def maximum_safe_speed(polyline: list[tuple[float, float]], arcs_per_side: int = 20, max_speeds: list[float] = []) -> list[float]:
+def maximum_safe_speed(polyline: list[tuple[float, float]], distances: list[float], arcs_per_side: int = 15, max_speeds: list[float] = []) -> list[float]:
     """
     This function determines the (theoretical) maximum safe driving speed, for every point in the line, considering the
     curvature (calculated aross multiple surrounding points, arcs_per_side). This calculation is based on the centrifrugal
@@ -67,4 +67,11 @@ def maximum_safe_speed(polyline: list[tuple[float, float]], arcs_per_side: int =
         pre_c = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
         post_c = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
         max_speeds.append(median([max_speed(*p1, polyline[i][0], polyline[i][1], *p2) * 3.6 for (p1, p2) in list(product(pre_c, post_c))]))
-    return list(filter(lambda v: float(v), max_speeds + [max_speeds[len(max_speeds) - 1]] + [max_speeds[len(max_speeds) - 1]]))
+
+    # Pad out length
+    pad_left = True
+    while (len(max_speeds) < len(polyline)):
+        if pad_left: max_speeds = [max_speeds[0]] + max_speeds
+        else: max_speeds = max_speeds + [max_speeds[-1]]
+
+    return max_speeds

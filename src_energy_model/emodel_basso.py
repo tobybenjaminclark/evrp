@@ -1,3 +1,4 @@
+import math
 from math import sin, cos
 
 # Road Graph G_r = (V_r, A_r) (Set of Intersections and Set of links)
@@ -41,16 +42,31 @@ from math import sin, cos
 # Mechanical Power Pm(t) needed to make the vehicle move, calculated by multiplying [1] by instantaneous speed. [2]
 # Pm(t) = m * a * v(t) + m * g * v(t) * sin * theta(t) + m * g * v(t) * C_r * cos * theta(t) + 0.5 * C_d * A * p * v(t)^3
 
-def get_pmt(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
-    return m * a * v + m * g * v * sin * theta + m * g * v * C_r * cos * theta + 0.5 * C_d * A * p * v^3
 
+# mechanical power is
+# m * a * v(t) + m * g * v(t) * sin theta(t) + m * g * v(t) * cr * cos * theta(t) + 0.5 * cd * A * p * v(t)^3
 
+cr = 0.0064         # rolling resistance, from basso
+cd = 0.7            # air drag , basso
+A = 8.0             # vehicle frontal area (in metres squared) , basso
+p = 1.2             # air density in kg/m^3
+g = 9.81
 
+# m is vehicle mass
+# a is instantaneous vehicle acceleration
+# v, v(t) is vehicle speed
+# theta is road angle (in degrees)
 
+m = 1000
+acc = 0.0
 
+def get_mechanical_power(s, ang):
+    ang = math.radians(ang)
+    return m * acc * s + m * g * s * sin(ang) + m * g * s * cr * cos(ang) + 0.5 * cd * A * p * s**3
 
+print(get_mechanical_power(11.11111, -2.49))
 
-# Energy & Efficieny
+# Energy & Efficiency
 # The electric powertrain is composed of several components that convert electric energy from the battery into a mechanical fore
 # to make the vehicle move. It is possible to reover energy and charge the battery when the vehicle is braking. The
 
@@ -66,8 +82,6 @@ def get_pmt(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
 # Total Mechanical Energy e_m needed to drive a certain stretch of road, can becalculated by integrating [2] with time.
 # Given an approimated constatn acceleration/deceleration a*, initial speed v_i and total surface distance d(m)
 # e_m = (mass * acceleration * distance + mass * gravity * distance * sin * gradient + 0.5 * drag_coefficient * frontal_surface * air_density * distance * (initial_speed^2 + (final_speed^2 - initial_speed^2) / 2)) / 3600
-
-
 
 
 
@@ -92,70 +106,6 @@ def get_pmt(m, a, v, C_r, theta, C_d, A, p, g = 9.81):
 #                          deceleration_distance * (mass * deceleration + mass *gravity * sin * gradient_ab + mass * gravity * rolling_resistance * cos * gradient_ab + R * (steady_speed^-2 + (final_speed^-2 - steady_speed^-2) / 2))
 # deceleration_energy = ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                                                                   36000 * n_deceleration
-
-
-import math
-
-# Define constants and parameters (example values)
-g = 9.81  # gravitational constant in m/s^2
-Cr = 0.0064  # rolling resistance coefficient
-Rd = 0.7  # drag coefficient (example value)
-bar_eta = 0.9  # efficiency factor (example value)
-bar_a = 0.9  # assumed acceleration in m/s^2
-
-
-def calculate_alpha_beta(d, alpha_ab_angle, v_i, bar_v_ab, v_f):
-    # Calculate sin and cos of the approximated angle
-    sin_bar_alpha_ab = math.sin(math.radians(alpha_ab_angle))
-    cos_bar_alpha_ab = math.cos(math.radians(alpha_ab_angle))
-
-    # Calculate alpha_a, alpha_b, alpha_i
-    alpha_a = d * (bar_a + g * sin_bar_alpha_ab + g * Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
-    alpha_b = g * d * (sin_bar_alpha_ab + Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
-    alpha_i = d * (bar_a + g * sin_bar_alpha_ab + g * Cr * cos_bar_alpha_ab) / (3600 * bar_eta)
-
-    # Calculate beta_a, beta_b, beta_i
-    beta_a = Rd * (v_i ** 2 + (bar_v_ab ** 2 - v_i ** 2) / 2) / (3600 * bar_eta)
-    beta_b = Rd * (d ** 2 * bar_v_ab ** 2) / (3600 * bar_eta)
-    beta_i = Rd * (bar_v_ab + (v_f - bar_v_ab) / 2) / (3600 * bar_eta)
-
-    # Calculate alpha_ab and beta_ab
-    alpha_ab = alpha_a + alpha_b + alpha_i
-    beta_ab = beta_a + beta_b + beta_i
-
-    return alpha_ab, beta_ab
-
-
-# Function to calculate energy demand e_ab
-def calculate_energy_demand(d, alpha_ab_angle, v_i, bar_v_ab, v_f, m):
-    alpha_ab, beta_ab = calculate_alpha_beta(d, alpha_ab_angle, v_i, bar_v_ab, v_f)
-    e_ab = alpha_ab * m + beta_ab
-    return e_ab
-
-
-# Define test cases
-test_cases = [
-    {"d": 1000, "alpha_ab_angle": 5, "v_i": 20, "bar_v_ab": 25, "v_f": 30, "m": 1500},
-    {"d": 500, "alpha_ab_angle": 2, "v_i": 15, "bar_v_ab": 20, "v_f": 25, "m": 1200},
-    {"d": 2000, "alpha_ab_angle": 10, "v_i": 25, "bar_v_ab": 30, "v_f": 35, "m": 2000},
-    {"d": 800, "alpha_ab_angle": 3, "v_i": 10, "bar_v_ab": 15, "v_f": 20, "m": 1000},
-]
-
-# Run test cases
-for i, test in enumerate(test_cases):
-    d = test["d"]
-    alpha_ab_angle = test["alpha_ab_angle"]
-    v_i = test["v_i"]
-    bar_v_ab = test["bar_v_ab"]
-    v_f = test["v_f"]
-    m = test["m"]
-
-    result = calculate_energy_demand(d, alpha_ab_angle, v_i, bar_v_ab, v_f, m)
-    print(f"Test case {i + 1}:")
-    print(f"Parameters: d={d}, alpha_ab_angle={alpha_ab_angle}, v_i={v_i}, bar_v_ab={bar_v_ab}, v_f={v_f}, m={m}")
-    print(f"Energy demand e_ab: {result:.2f} J\n")
-
-
 
 
 

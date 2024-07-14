@@ -1,6 +1,5 @@
 from math import cos, sin, sqrt, radians, atan2
 from geopy.distance import distance
-from shapely.geometry import Point, LineString
 import numpy as np
 from statistics import median
 from itertools import product
@@ -80,6 +79,8 @@ def interpolate_polyline(points):
         total_distance += segment_distance
 
     return interpolated_points
+
+
 
 def calculate_bearing(point_a: tuple[float, float], point_b: tuple[float, float]):
     """
