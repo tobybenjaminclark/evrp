@@ -6,6 +6,7 @@ from evrp_route_utils import *
 from evrp_turning_calculations import *
 import matplotlib.pyplot as plt
 import numpy as np
+from statistics import mean
 from scipy.interpolate import interp1d
 
 
@@ -29,7 +30,7 @@ class Route():
 
         self.plot_route_data()
 
-    def plot_route_data(self, rolling_average_length: int = 30) -> None:
+    def plot_route_data(self, pad_size: int = 50) -> None:
         """
         Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
         average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
@@ -41,19 +42,48 @@ class Route():
 
         # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
+        altitude_series_ = altitude_series
         speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
         distances = [approximate_distance_from_polyline(superpolyline[0:n]) for n in range(0, len(superpolyline))]
 
         # Perform linear interpolation (filling in gaps between samples linearly)
-        f_interp = interp1d(distances, altitude_series, kind='linear',fill_value="extrapolate")
+        f_interp = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
 
         # Create a new set of distances for the smoothed line (with higher resolution)
-        smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances) * 10)
+        smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances))
         smoothed_altitudes = f_interp(smoothed_distances)
 
-        # Apply a rolling average to further smooth the data, according to the rolling average length.
-        rolling_window = rolling_average_length
-        smoothed_altitudes_rolling = np.convolve(smoothed_altitudes, np.ones(rolling_window) / rolling_window, mode='same')
+        # Apply a rolling average to further smooth the data
+        interpolated_altitudes = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
+
+        if(len(distances) > pad_size): pad_size = len(distances)
+        smooth_altitudes = []
+        for d in distances:
+            avg = []
+
+            start_index = d - (pad_size // 2)
+            end_index = d + (pad_size // 2)
+
+            """
+            if(start_index < 0):
+                end_index = end_index + abs(0 - end_index)
+                start_index = 0
+
+            if(end_index > len(distances)-1):
+                start_index = start_index - abs((len(distances)-1) - end_index)
+                end_index = len(distances) - 1"""
+
+            for after in range(int(start_index), int(end_index)):
+                if (np.isnan(interpolated_altitudes(after)) or np.isinf(interpolated_altitudes(after))): continue
+                else: avg.append(interpolated_altitudes(after))
+
+            smooth_altitudes.append(np.average(avg))
+
+        print(len(distances))
+        print(len(smooth_altitudes))
+        print(distances[0])
+        altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
+
 
         # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
@@ -68,7 +98,7 @@ class Route():
 
         # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and altitudes
         ax1.set_xlim(0, max(distances))
-        ax1.set_ylim(min(altitude_series), max(altitude_series))
+        ax1.set_ylim(min(altitude_series_), max(altitude_series_))
 
         # Initialize the pastel color generator
         color_gen = bright_colors_generator()
@@ -80,12 +110,14 @@ class Route():
             color = next(color_gen)
 
             # Plot the altitude data for this step as bars
-            ax1.bar(distances[start_idx:end_idx], altitude_series[start_idx:end_idx],
+            ax1.bar(distances[start_idx:end_idx], altitude_series_[start_idx:end_idx],
                     width=widths[start_idx:end_idx], align='edge', color=color,
                     label=f'Step {i + 1} - {step.instructions}')
 
         # Plot the smoothed linear path (polyline) for the entire route
-        ax1.plot(smoothed_distances[::10], smoothed_altitudes_rolling[::10], label='Smoothed Linear Path', color='blue')
+        ax1.plot(distances, smooth_altitudes, label='Smoothed Linear Path', color='blue', linewidth=4.0)
+
+        print(f"Distances: {len(distances)}, Smooth Altitudes: {len(smooth_altitudes)}, Altitude Series: {len(altitude_series_)}")
 
         # Add legend and grid to the first subplot
         ax1.legend()
@@ -244,10 +276,9 @@ class Route():
         pwr_seconds = []
         pwr_pwrs = []
 
-        interpolated_dist_altitudes = interp1d(distances, altitude_series, kind='linear', fill_value='extrapolate')
         interpolated_distances = interp1d(seconds, distances_traveled, kind='linear', fill_value="extrapolate")
         interpolated_speeds = interp1d(seconds, speeds, kind='linear', fill_value="extrapolate")
-        interpolated_altitude = lambda dist: interpolated_dist_altitudes(interpolated_distances(dist))
+        interpolated_altitude = lambda dist: altitude_series(interpolated_distances(dist))
 
         for current_second in seconds:
             current_distance = interpolated_distances(current_second)
@@ -256,7 +287,7 @@ class Route():
 
             # Compute altitude at the next step
             next_distance = current_distance + delta_d
-            next_altitude = interpolated_dist_altitudes(next_distance)
+            next_altitude = altitude_series(next_distance)
 
             # Calculate the road gradient using finite differences
             gradient = (next_altitude - current_altitude) / delta_d
@@ -282,12 +313,12 @@ class Route():
         cumulative = []
         segment = 1
         for x in pwr_pwrs:
-            total = total + (x)
+            total = total + (x / 3600 / 1000)
             cumulative.append(total)
-            print(f"Segment {segment}, at {x:.2f} Joules. New total is: {total:.2f} Joules")
+            print(f"Segment {segment}, at {x:.2f} W. New total is: {total:.2f} kWh")
             segment += 1
 
-        print(f"Total Power: {total:.2f} Joules")
+        print(f"Total Power: {total:.2f} kWh")
 
 
         ax6.plot(pwr_seconds, pwr_pwrs, marker='', linestyle='-', color='green', label='Mechanical Power')
@@ -301,11 +332,11 @@ class Route():
         ax6.set_ylim(min(pwr_pwrs), max(pwr_pwrs))
         ax6.set_xlim(0, max(pwr_seconds))
 
-        ax6Twin.set_ylim(min(pwr_pwrs), max(cumulative))
+        ax6Twin.set_ylim(0, max(cumulative))
 
         # Adding data labels to the cumulative plot
         for i, value in enumerate(cumulative):
-            if(i % 10 == 0): ax6Twin.annotate(f'{int(value)/1000} kJ', (pwr_seconds[i], cumulative[i]), textcoords="offset points", xytext=(0, 5), ha='center')
+            if(i % 10 == 0): ax6Twin.annotate(f'{value:.3f} kWh', (pwr_seconds[i], cumulative[i]), textcoords="offset points", xytext=(0, 5), ha='center')
 
         # Adding legends
         ax6.legend(loc='upper left')
