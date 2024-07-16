@@ -27,24 +27,18 @@ class Route():
         self.origin = _origin
         self.destination = _destination
         self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
+        self.superpolyline = [point for step in self.steps for point in step.polyline]
+
+        self.calculate_altitude_sampling()
 
         self.plot_route_data()
 
-    def plot_route_data(self, pad_size: int = 50) -> None:
-        """
-        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
-        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
-        color coding for each step and visualization of angle list.
-        """
-
-        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
-        superpolyline = [point for step in self.steps for point in step.polyline]
+    def calculate_altitude_sampling(self, pad_size: int = 50):
 
         # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
-        altitude_series_ = altitude_series
         speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
-        distances = [approximate_distance_from_polyline(superpolyline[0:n]) for n in range(0, len(superpolyline))]
+        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
 
         # Perform linear interpolation (filling in gaps between samples linearly)
         f_interp = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
@@ -62,7 +56,7 @@ class Route():
             avg = []
 
             start_index = d - (pad_size // 2)
-            end_index = d + (pad_size // 2) 
+            end_index = d + (pad_size // 2)
 
             for after in range(int(start_index), int(end_index)):
                 if (np.isnan(interpolated_altitudes(after)) or np.isinf(interpolated_altitudes(after))): continue
@@ -70,11 +64,24 @@ class Route():
 
             smooth_altitudes.append(np.average(avg))
 
-        print(len(distances))
-        print(len(smooth_altitudes))
-        print(distances[0])
-        altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
+        self.altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
 
+
+    def plot_route_data(self) -> None:
+        """
+        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
+        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
+        color coding for each step and visualization of angle list.
+        """
+
+        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
+        superpolyline = self.superpolyline
+        altitude_series = self.altitude_series
+        altitude_series_ = [altitude for step in self.steps for point, altitude in step.locdata]
+
+        speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
+        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
+        smooth_altitudes = [altitude_series(d) for d in distances]
 
         # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
         widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
