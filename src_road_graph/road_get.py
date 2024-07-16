@@ -9,5 +9,5 @@ def get_directions(origin, destination):
     r = Route(response.json(), origin, destination)
 
 if(__name__ == '__main__'):
-    get_directions( "Amigos Pizza, Lenton, Nottingham", "Rock City, Nottingham")
+    get_directions( "210 Great Knightleys, Basildon, Essex", "81 Great Knightleys, Basildon, Essex")
 

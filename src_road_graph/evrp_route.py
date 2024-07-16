@@ -25,8 +25,7 @@ log_file_path = os.path.join('logs', log_file_name)
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     handlers=[
-                        logging.FileHandler(log_file_path),
-                        logging.StreamHandler()
+                        logging.FileHandler(log_file_path)
                     ])
 
 def bright_colors_generator():
@@ -61,7 +60,7 @@ class Route():
         execution_time = timeit.timeit(method, number=1)
         logging.info(f"{method_name:<30}: {execution_time:.6f} seconds")
 
-    def calculate_altitude_sampling(self, pad_size: int = 50):
+    def calculate_altitude_sampling(self, pad_size: int = 40):
 
         # Derive altitude series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
@@ -222,9 +221,9 @@ class Route():
         current_distance = 0.0
         interp = interp1d(self.distances, self.acc_speed_series, kind='linear', fill_value="extrapolate")
 
-        seconds = [0]
-        speeds = [0]
-        distances_traveled = [0]
+        seconds = []
+        speeds = []
+        distances_traveled = []
 
         current_second = 0
         while current_distance < self.distances[-1]:
@@ -233,6 +232,9 @@ class Route():
 
             # Convert km/h to m/s
             target_speed = interp(current_distance) * (1000 / 3600)
+            for x in range(int(current_distance) + 5, int(current_distance) + int(current_speed * 3.6)):
+                if interp(x) < target_speed:
+                    target_speed = interp(x)
 
             if current_speed < target_speed:
                 current_speed += acceleration_rate * time_interval
@@ -245,7 +247,7 @@ class Route():
                 if current_speed < target_speed: current_speed = target_speed
 
             speeds.append(current_speed * 3.6)  # Convert m/s to km/h
-            distances_traveled.append(current_distance)
+            distances_traveled.append(target_speed)
             seconds.append(current_second)
 
             self.distances_travelled = distances_traveled
@@ -302,8 +304,8 @@ class Route():
             pwr = get_mechanical_power(speed_ms, gradient_degrees)
 
             # Print or store the result as needed
-            # print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
-            # print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
+            print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
+            print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
 
             if(np.isnan(pwr)):
                 continue
@@ -320,7 +322,7 @@ class Route():
             # print(f"Segment {segment}, at {x:.2f} W. New total is: {total:.2f} kWh")
             segment += 1
 
-        # print(f"Total Power: {total:.2f} kWh")
+        print(f"Total Power: {total:.2f} kWh")
 
         self.total = total
         self.cumulative = cumulative
