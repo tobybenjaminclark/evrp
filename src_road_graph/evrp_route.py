@@ -32,10 +32,9 @@ class Route():
 
         self.calculate_altitude_sampling()
         self.calculate_speed_series()
+        self.calculate_route_turning_speed()
 
         self.plot_route_data()
-
-
 
     def calculate_altitude_sampling(self, pad_size: int = 50):
 
@@ -51,8 +50,6 @@ class Route():
 
         # Provide altitude series as a linear interpolation of this rolling window.
         self.altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
-
-
 
     def plot_altitude_series(self, axis):
 
@@ -96,7 +93,6 @@ class Route():
         axis.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
         axis.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
-
     def calculate_speed_series(self):
         self.speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
 
@@ -133,6 +129,64 @@ class Route():
         # Format the x axis labels to display distances in meters
         axis.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
 
+    def plot_route_layout(self, axis):
+        # Plot Route on a map in the third subplot
+        axis.set_title('Route Plot')
+        axis.set_xlabel('Longitude')
+        axis.set_ylabel('Latitude')
+
+        # Initialize the pastel color generator again for the route plot
+        color_gen = bright_colors_generator()
+
+        # Iterate through each step and plot segments of the polyline with corresponding colors
+        for i, step in enumerate(self.steps):
+            color = next(color_gen)  # Get the next pastel color
+            step_latitudes = [point[0] for point in step.polyline]
+            step_longitudes = [point[1] for point in step.polyline]
+            axis.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
+                     label=f'Step {i + 1} - {step.instructions}')
+
+        # Label the origin at the first point of the route
+        axis.text(self.steps[0].polyline[0][1], self.steps[0].polyline[0][0], self.origin.split(",")[0], fontsize=14,
+                 color='black', ha='center',
+                 va='bottom')
+
+        # Label the destination at the last point of the route
+        axis.text(self.steps[-1].polyline[-1][1], self.steps[-1].polyline[-1][0], self.destination.split(",")[0],
+                 fontsize=14,
+                 color='black', ha='center', va='bottom')
+
+        # Set the aspect ratio of the plot to be equal
+        axis.set_aspect('equal', adjustable='datalim')
+        axis.legend()
+        axis.grid(True)
+
+    def plot_route_turning_speed(self, axis):
+        # Plotting
+        axis.set_title('Turning Speed Plots')
+        axis.set_xlabel('Distance')
+        axis.set_ylabel('Maximum Speed (km/h)')
+
+        axis.set_xlim(0, max(self.distances))
+        axis.set_ylim(0, max(self.acc_speed_series))
+        axis.plot(self.distances, self.acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
+
+        # Add colors for steps
+        start_idx = 0
+        color_gen = bright_colors_generator()
+        for i, step in enumerate(self.steps):
+            end_idx = start_idx + len(step.polyline) # - 1
+            axis.plot(self.distances[start_idx:end_idx], self.acc_speed_series[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
+                     label=f'Step {i + 1}')
+            start_idx = end_idx
+
+        axis.legend()
+
+    def calculate_route_turning_speed(self):
+        max_speed_series = maximum_safe_speed(self.superpolyline, self.distances)
+        self.acc_speed_series = [min(self.speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
+
+
     def plot_route_data(self) -> None:
         """
         Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
@@ -159,65 +213,10 @@ class Route():
         speed_series = self.speed_series
 
         self.plot_speed_series(ax2)
+        self.plot_route_layout(ax3)
 
-        # Plot Route on a map in the third subplot
-        ax3.set_title('Route Plot')
-        ax3.set_xlabel('Longitude')
-        ax3.set_ylabel('Latitude')
+        self.plot_route_turning_speed(ax4)
 
-        # Initialize the pastel color generator again for the route plot
-        color_gen = bright_colors_generator()
-
-        # Iterate through each step and plot segments of the polyline with corresponding colors
-        for i, step in enumerate(self.steps):
-            color = next(color_gen)  # Get the next pastel color
-            step_latitudes = [point[0] for point in step.polyline]
-            step_longitudes = [point[1] for point in step.polyline]
-            ax3.plot(step_longitudes, step_latitudes, marker='o', linestyle='-', color=color,
-                     label=f'Step {i + 1} - {step.instructions}')
-
-        # Label the origin at the first point of the route
-        ax3.text(self.steps[0].polyline[0][1], self.steps[0].polyline[0][0], self.origin.split(",")[0], fontsize=14,
-                 color='black', ha='center',
-                 va='bottom')
-
-        # Label the destination at the last point of the route
-        ax3.text(self.steps[-1].polyline[-1][1], self.steps[-1].polyline[-1][0], self.destination.split(",")[0],
-                 fontsize=14,
-                 color='black', ha='center', va='bottom')
-
-        # Set the aspect ratio of the plot to be equal
-        ax3.set_aspect('equal', adjustable='datalim')
-        ax3.legend()
-        ax3.grid(True)
-
-        max_speed_series = maximum_safe_speed(superpolyline, distances)
-
-        speed_series_interp = interp1d(distances, speed_series, kind='linear', fill_value="extrapolate")
-        max_speed_series_inerp = interp1d(distances, max_speed_series, kind='linear', fill_value="extrapolate")
-
-        acc_speed_series = [min(speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
-
-
-        # Plotting
-        ax4.set_title('Turning Speed Plots')
-        ax4.set_xlabel('Distance')
-        ax4.set_ylabel('Maximum Speed (km/h)')
-
-        ax4.set_xlim(0, max(distances))
-        ax4.set_ylim(0, max(acc_speed_series))
-        ax4.plot(distances, acc_speed_series, marker='', linestyle='-', color='green', label='Interpolated Maximum Speed (km/h)')
-
-        # Add colors for steps
-        start_idx = 0
-        color_gen = bright_colors_generator()
-        for i, step in enumerate(self.steps):
-            end_idx = start_idx + len(step.polyline) # - 1
-            ax4.plot(distances[start_idx:end_idx], acc_speed_series[start_idx:end_idx], marker='o', linestyle='-', color=next(color_gen),
-                     label=f'Step {i + 1}')
-            start_idx = end_idx
-
-        ax4.legend()
 
         # Parameters
         acceleration_rate = 0.82     # m/s^2
@@ -227,7 +226,7 @@ class Route():
         # Simulate the car speed
         current_speed = 1.0  # m/s
         current_distance = 0.0
-        interp = interp1d(distances, acc_speed_series, kind='linear', fill_value="extrapolate")
+        interp = interp1d(distances, self.acc_speed_series, kind='linear', fill_value="extrapolate")
 
         seconds = [0]
         speeds = [0]
