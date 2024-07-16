@@ -28,10 +28,14 @@ class Route():
         self.destination = _destination
         self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
         self.superpolyline = [point for step in self.steps for point in step.polyline]
+        self.distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
 
         self.calculate_altitude_sampling()
+        self.calculate_speed_series()
 
         self.plot_route_data()
+
+
 
     def calculate_altitude_sampling(self, pad_size: int = 50):
 
@@ -49,36 +53,23 @@ class Route():
         self.altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
 
 
-    def plot_route_data(self) -> None:
-        """
-        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
-        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
-        color coding for each step and visualization of angle list.
-        """
 
-        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
-        superpolyline = self.superpolyline
-        altitude_series = self.altitude_series
-        altitude_series_ = [altitude for step in self.steps for point, altitude in step.locdata]
+    def plot_altitude_series(self, axis):
 
-        speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
-        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
-        smooth_altitudes = [altitude_series(d) for d in distances]
+        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.self.altitude_series
+        discrete_altitude_sampling = [altitude for step in self.steps for point, altitude in step.locdata]
 
         # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
-        widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
-
-        # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
-        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 40))
+        widths = [self.distances[i + 1] - self.distances[i] if i < len(self.distances) - 1 else 1 for i in range(len(self.distances))]
 
         # Plot Altitude vs Distance on the first subplot (altitude series over distance)
-        ax1.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(distances) / len(distances), 1)}m)')
-        ax1.set_xlabel('Distance (meters)')
-        ax1.set_ylabel('Altitude (meters)')
+        axis.set_title(f'Altitude vs Distance (Average Sampling Rate of {round(max(self.distances) / len(self.distances), 2)}m)')
+        axis.set_xlabel('Distance into Route (meters)')
+        axis.set_ylabel('Altitude (meters)')
 
-        # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and altitudes
-        ax1.set_xlim(0, max(distances))
-        ax1.set_ylim(min(altitude_series_), max(altitude_series_))
+        # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and (discrete) altitudes
+        axis.set_xlim(0, max(self.distances))
+        axis.set_ylim(min(discrete_altitude_sampling), max(discrete_altitude_sampling))
 
         # Initialize the pastel color generator
         color_gen = bright_colors_generator()
@@ -90,34 +81,38 @@ class Route():
             color = next(color_gen)
 
             # Plot the altitude data for this step as bars
-            ax1.bar(distances[start_idx:end_idx], altitude_series_[start_idx:end_idx],
+            axis.bar(self.distances[start_idx:end_idx], discrete_altitude_sampling[start_idx:end_idx],
                     width=widths[start_idx:end_idx], align='edge', color=color,
                     label=f'Step {i + 1} - {step.instructions}')
 
-        # Plot the smoothed linear path (polyline) for the entire route
-        ax1.plot(distances, smooth_altitudes, label='Smoothed Linear Path', color='blue', linewidth=4.0)
-
-        print(f"Distances: {len(distances)}, Smooth Altitudes: {len(smooth_altitudes)}, Altitude Series: {len(altitude_series_)}")
+        # Plot the smoothed linear path (polyline) for the entire route, from calculate_altitude_series
+        axis.plot(self.distances, [self.altitude_series(d) for d in self.distances], label='Smoothed Altitude Path', color='blue', linewidth=6.0)
 
         # Add legend and grid to the first subplot
-        ax1.legend()
-        ax1.legend()
-        ax1.grid(True)
+        axis.legend()
+        axis.grid(True)
 
         # Format the x and y axis labels to display distances and altitudes in meters
-        ax1.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
-        ax1.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
+        axis.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+        axis.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
+
+
+    def calculate_speed_series(self):
+        self.speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
+
+    def plot_speed_series(self, axis):
 
         # Plot Speed vs Distance on the second subplot (speed series over distance)
-        ax2.set_title('Speed vs Distance')
-        ax2.set_xlabel('Distance (meters)')
-        ax2.set_ylabel('Speed (km/h)')
+        axis.set_title('Speed vs Distance')
+        axis.set_xlabel('Distance (meters)')
+        axis.set_ylabel('Speed (km/h)')
 
         # Ensure the x-axis and y-axis start at 0 and cover the full range of distances and speeds
-        ax2.set_xlim(0, max(distances))
-        ax2.set_ylim(0, max(speed_series))
+        axis.set_xlim(0, max(self.distances))
+        axis.set_ylim(0, max(self.speed_series))
 
         # Initialize the pastel color generator again for the speed plot
+        widths = [self.distances[i + 1] - self.distances[i] if i < len(self.distances) - 1 else 1 for i in range(len(self.distances))]
         color_gen = bright_colors_generator()
 
         # Iterate through each step and plot bars with corresponding colors
@@ -127,16 +122,43 @@ class Route():
             color = next(color_gen)
 
             # Plot the speed data for this step as bars
-            ax2.bar(distances[start_idx:end_idx], speed_series[start_idx:end_idx],
+            axis.bar(self.distances[start_idx:end_idx], self.speed_series[start_idx:end_idx],
                     width=widths[start_idx:end_idx], align='edge', color=color,
                     label=f'Step {i + 1} - {step.instructions}')
 
         # Add legend and grid to the second subplot
-        ax2.legend()
-        ax2.grid(True)
+        axis.legend()
+        axis.grid(True)
 
         # Format the x axis labels to display distances in meters
-        ax2.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+        axis.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, pos: f'{x:.0f}m'))
+
+    def plot_route_data(self) -> None:
+        """
+        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
+        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
+        color coding for each step and visualization of angle list.
+        """
+
+        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
+        superpolyline = self.superpolyline
+
+
+        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
+
+        # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
+        widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
+
+        # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
+        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 40))
+
+        self.plot_altitude_series(ax1)
+
+
+
+        speed_series = self.speed_series
+
+        self.plot_speed_series(ax2)
 
         # Plot Route on a map in the third subplot
         ax3.set_title('Route Plot')
@@ -258,7 +280,7 @@ class Route():
 
         interpolated_distances = interp1d(seconds, distances_traveled, kind='linear', fill_value="extrapolate")
         interpolated_speeds = interp1d(seconds, speeds, kind='linear', fill_value="extrapolate")
-        interpolated_altitude = lambda dist: altitude_series(interpolated_distances(dist))
+        interpolated_altitude = lambda dist: self.altitude_series(interpolated_distances(dist))
 
         for current_second in seconds:
             current_distance = interpolated_distances(current_second)
@@ -267,7 +289,7 @@ class Route():
 
             # Compute altitude at the next step
             next_distance = current_distance + delta_d
-            next_altitude = altitude_series(next_distance)
+            next_altitude = self.altitude_series(next_distance)
 
             # Calculate the road gradient using finite differences
             gradient = (next_altitude - current_altitude) / delta_d
