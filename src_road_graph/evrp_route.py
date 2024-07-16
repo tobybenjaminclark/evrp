@@ -62,16 +62,7 @@ class Route():
             avg = []
 
             start_index = d - (pad_size // 2)
-            end_index = d + (pad_size // 2)
-
-            """
-            if(start_index < 0):
-                end_index = end_index + abs(0 - end_index)
-                start_index = 0
-
-            if(end_index > len(distances)-1):
-                start_index = start_index - abs((len(distances)-1) - end_index)
-                end_index = len(distances) - 1"""
+            end_index = d + (pad_size // 2) 
 
             for after in range(int(start_index), int(end_index)):
                 if (np.isnan(interpolated_altitudes(after)) or np.isinf(interpolated_altitudes(after))): continue
