@@ -35,35 +35,17 @@ class Route():
 
     def calculate_altitude_sampling(self, pad_size: int = 50):
 
-        # Derive altitude series, speed series, and cumulative distances from this super-polyline (and step data)
+        # Derive altitude series, and cumulative distances from this super-polyline (and step data)
         altitude_series = [altitude for step in self.steps for point, altitude in step.locdata]
-        speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
-        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
+        if len(distances := [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]) > pad_size: pad_size = len(distances)
 
-        # Perform linear interpolation (filling in gaps between samples linearly)
-        f_interp = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
-
-        # Create a new set of distances for the smoothed line (with higher resolution)
-        smoothed_distances = np.linspace(distances[0], distances[-1], num=len(distances))
-        smoothed_altitudes = f_interp(smoothed_distances)
-
-        # Apply a rolling average to further smooth the data
+        # Linearly interpolate the data series
         interpolated_altitudes = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
 
-        if(len(distances) > pad_size): pad_size = len(distances)
-        smooth_altitudes = []
-        for d in distances:
-            avg = []
+        # List Comprehension to perform a rolling window of size `pad_size`
+        smooth_altitudes = [np.average(list(filter(lambda v: not(np.isnan(v) or np.isinf(v)), [interpolated_altitudes(a) for a in range(int(d - (pad_size // 2)), int(d + (pad_size // 2)))]))) for d in distances]
 
-            start_index = d - (pad_size // 2)
-            end_index = d + (pad_size // 2)
-
-            for after in range(int(start_index), int(end_index)):
-                if (np.isnan(interpolated_altitudes(after)) or np.isinf(interpolated_altitudes(after))): continue
-                else: avg.append(interpolated_altitudes(after))
-
-            smooth_altitudes.append(np.average(avg))
-
+        # Provide altitude series as a linear interpolation of this rolling window.
         self.altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
 
 
