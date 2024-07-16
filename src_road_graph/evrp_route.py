@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from statistics import mean
 from scipy.interpolate import interp1d
-
+import timeit
 
 
 def bright_colors_generator():
@@ -30,11 +30,17 @@ class Route():
         self.superpolyline = [point for step in self.steps for point in step.polyline]
         self.distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
 
-        self.calculate_altitude_sampling()
-        self.calculate_speed_series()
-        self.calculate_route_turning_speed()
-        self.calculate_seconds_speeds()
-        self.calculate_energy_consumption()
+        methods = [
+            ("calculate_altitude_sampling", self.calculate_altitude_sampling),
+            ("calculate_speed_series", self.calculate_speed_series),
+            ("calculate_route_turning_speed", self.calculate_route_turning_speed),
+            ("calculate_seconds_speeds", self.calculate_seconds_speeds),
+            ("calculate_energy_consumption", self.calculate_energy_consumption),
+        ]
+
+        for name, method in methods:
+            execution_time = timeit.timeit(method, number=1)
+            print(f"{name} execution time: {execution_time:.6f} seconds")
 
         self.plot_route_data()
 
@@ -48,7 +54,7 @@ class Route():
         interpolated_altitudes = interp1d(distances, altitude_series, kind='linear', fill_value="extrapolate")
 
         # List Comprehension to perform a rolling window of size `pad_size`
-        smooth_altitudes = [np.average(list(filter(lambda v: not(np.isnan(v) or np.isinf(v)), [interpolated_altitudes(a) for a in range(int(d - (pad_size // 2)), int(d + (pad_size // 2)))]))) for d in distances]
+        smooth_altitudes = [np.average(list(filter(lambda v: not(np.isnan(v) or np.isinf(v)), [interpolated_altitudes(a) for a in range(int(d - (pad_size // 2)), int(d + (pad_size // 2)), pad_size // 20)]))) for d in distances]
 
         # Provide altitude series as a linear interpolation of this rolling window.
         self.altitude_series = interp1d(distances, smooth_altitudes, kind='linear', fill_value="extrapolate")
@@ -279,8 +285,8 @@ class Route():
             pwr = get_mechanical_power(speed_ms, gradient_degrees)
 
             # Print or store the result as needed
-            print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
-            print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
+            # print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
+            # print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
 
             if(np.isnan(pwr)):
                 continue
@@ -294,10 +300,10 @@ class Route():
         for x in pwr_pwrs:
             total = total + (x / 3600 / 1000)
             cumulative.append(total)
-            print(f"Segment {segment}, at {x:.2f} W. New total is: {total:.2f} kWh")
+            # print(f"Segment {segment}, at {x:.2f} W. New total is: {total:.2f} kWh")
             segment += 1
 
-        print(f"Total Power: {total:.2f} kWh")
+        # print(f"Total Power: {total:.2f} kWh")
 
         self.total = total
         self.cumulative = cumulative
