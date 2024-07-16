@@ -33,6 +33,8 @@ class Route():
         self.calculate_altitude_sampling()
         self.calculate_speed_series()
         self.calculate_route_turning_speed()
+        self.calculate_seconds_speeds()
+        self.calculate_energy_consumption()
 
         self.plot_route_data()
 
@@ -186,54 +188,23 @@ class Route():
         max_speed_series = maximum_safe_speed(self.superpolyline, self.distances)
         self.acc_speed_series = [min(self.speed_series[i], max_speed_series[i]) for i in range(len(max_speed_series))]
 
-
-    def plot_route_data(self) -> None:
-        """
-        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
-        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
-        color coding for each step and visualization of angle list.
-        """
-
-        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
-        superpolyline = self.superpolyline
-
-
-        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
-
-        # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
-        widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
-
-        # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
-        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 40))
-
-        self.plot_altitude_series(ax1)
-
-
-
-        speed_series = self.speed_series
-
-        self.plot_speed_series(ax2)
-        self.plot_route_layout(ax3)
-
-        self.plot_route_turning_speed(ax4)
-
-
+    def calculate_seconds_speeds(self):
         # Parameters
         acceleration_rate = 0.82     # m/s^2
         deceleration_rate = 2.52     # m/s^2
-        time_interval = 1.0         # seconds
+        time_interval = 1.0          # seconds
 
         # Simulate the car speed
-        current_speed = 1.0  # m/s
+        current_speed = 1.0
         current_distance = 0.0
-        interp = interp1d(distances, self.acc_speed_series, kind='linear', fill_value="extrapolate")
+        interp = interp1d(self.distances, self.acc_speed_series, kind='linear', fill_value="extrapolate")
 
         seconds = [0]
         speeds = [0]
         distances_traveled = [0]
 
         current_second = 0
-        while current_distance < distances[-1]:
+        while current_distance < self.distances[-1]:
             current_second += time_interval
             current_distance += current_speed * time_interval
 
@@ -254,34 +225,41 @@ class Route():
             distances_traveled.append(current_distance)
             seconds.append(current_second)
 
+            self.distances_travelled = distances_traveled
+            self.seconds = seconds
+            self.speeds = speeds
+
+    def plot_real_speed_series(self, axis):
+
         # Plot speed
-        ax5.plot(seconds, speeds, label='Speed (km/h)', color='b')
+        axis.plot(self.seconds, self.speeds, label='Speed (km/h)', color='b')
 
         # Setup the secondary y-axis for distance
-        axTwin = ax5.twinx()
+        axTwin = axis.twinx()
         axTwin.set_ylabel('Distance (m)')
-        axTwin.plot(seconds, distances_traveled, label='Distance (m)', color='r')
+        axTwin.plot(self.seconds, self.distances_travelled, label='Distance (m)', color='r')
 
         # Setting limits for both axes
-        ax5.set_ylim(0, max(speeds))
-        ax5.set_xlim(0, max(seconds))
-        axTwin.set_ylim(0, max(distances_traveled))
+        axis.set_ylim(0, max(self.speeds))
+        axis.set_xlim(0, max(self.seconds))
+        axTwin.set_ylim(0, max(self.distances_travelled))
 
         # Adding legends
-        ax5.legend(loc='upper left')
+        axis.legend(loc='upper left')
         axTwin.legend(loc='upper right')
 
+    def calculate_energy_consumption(self):
         # sampling for gradient?
         delta_d = 10.0
 
         pwr_seconds = []
         pwr_pwrs = []
 
-        interpolated_distances = interp1d(seconds, distances_traveled, kind='linear', fill_value="extrapolate")
-        interpolated_speeds = interp1d(seconds, speeds, kind='linear', fill_value="extrapolate")
+        interpolated_distances = interp1d(self.seconds, self.distances_travelled, kind='linear', fill_value="extrapolate")
+        interpolated_speeds = interp1d(self.seconds, self.speeds, kind='linear', fill_value="extrapolate")
         interpolated_altitude = lambda dist: self.altitude_series(interpolated_distances(dist))
 
-        for current_second in seconds:
+        for current_second in self.seconds:
             current_distance = interpolated_distances(current_second)
             current_altitude = interpolated_altitude(current_second)
             current_speed = interpolated_speeds(current_second)
@@ -321,27 +299,72 @@ class Route():
 
         print(f"Total Power: {total:.2f} kWh")
 
+        self.total = total
+        self.cumulative = cumulative
+        self.pwr_pwrs = pwr_pwrs
+        self.pwr_seconds = pwr_seconds
 
-        ax6.plot(pwr_seconds, pwr_pwrs, marker='', linestyle='-', color='green', label='Mechanical Power')
+    def plot_energy_consumption(self, axis):
+        axis.plot(self.pwr_seconds, self.pwr_pwrs, marker='', linestyle='-', color='green', label='Mechanical Power')
 
         # Setup the secondary y-axis for distance
-        ax6Twin = ax6.twinx()
+        ax6Twin = axis.twinx()
         ax6Twin.set_ylabel('Distance (m)')
-        ax6Twin.plot(pwr_seconds, cumulative, label='Cumulative', color='r')
+        ax6Twin.plot(self.pwr_seconds, self.cumulative, label='Cumulative', color='r')
 
         # Setting limits for both axes
-        ax6.set_ylim(min(pwr_pwrs), max(pwr_pwrs))
-        ax6.set_xlim(0, max(pwr_seconds))
+        axis.set_ylim(min(self.pwr_pwrs), max(self.pwr_pwrs))
+        axis.set_xlim(0, max(self.pwr_seconds))
 
-        ax6Twin.set_ylim(0, max(cumulative))
+        ax6Twin.set_ylim(0, max(self.cumulative))
 
         # Adding data labels to the cumulative plot
-        for i, value in enumerate(cumulative):
-            if(i % 10 == 0): ax6Twin.annotate(f'{value:.3f} kWh', (pwr_seconds[i], cumulative[i]), textcoords="offset points", xytext=(0, 5), ha='center')
+        for i, value in enumerate(self.cumulative):
+            if(i % 10 == 0): ax6Twin.annotate(f'{value:.3f} kWh', (self.pwr_seconds[i], self.cumulative[i]), textcoords="offset points", xytext=(0, 5), ha='center')
 
         # Adding legends
-        ax6.legend(loc='upper left')
+        axis.legend(loc='upper left')
         ax6Twin.legend(loc='upper right')
+
+    def plot_route_data(self) -> None:
+        """
+        Method to plot route data on a Matplotlib graph. Plots the discrete altitude sampling (over time) with a rolling
+        average overlay (of length rolling_average_length). Displays the entire route (with dots at each polynode), with
+        color coding for each step and visualization of angle list.
+        """
+
+        # Synthesise a super-polyline for the whole route from the polylines of each constituent step.
+        superpolyline = self.superpolyline
+
+
+        distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
+
+        # Calculate the widths for each bar (visualisation, the sample is at the left-most point on each bar)
+        widths = [distances[i + 1] - distances[i] if i < len(distances) - 1 else 1 for i in range(len(distances))]
+
+        # Create a figure with three subplots: one for altitude vs distance, one for speed vs distance, and one for the route plot
+        fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(70, 40))
+
+        self.plot_altitude_series(ax1)
+
+
+
+        speed_series = self.speed_series
+
+        self.plot_speed_series(ax2)
+        self.plot_route_layout(ax3)
+
+        self.plot_route_turning_speed(ax4)
+        self.plot_real_speed_series(ax5)
+        self.plot_energy_consumption(ax6)
+
+
+
+
+
+
+
+
 
         # Adjust layout to prevent overlapping of subplots
         plt.tight_layout()
