@@ -83,3 +83,19 @@ def draw_full_graph(G):
     plt.title('Full Mesh Network of Roads')
     plt.grid(True)
     plt.show()
+
+
+def create_customer_graph(origin = "Nottingham", radius = 2000, keyword = "KFC"):
+    a = find_locations(get_coordinates_from_keyword(origin), radius, keyword)
+    for x in a:
+        print(x)
+
+    for ind, origin in enumerate(a):
+        for other_loc in range(ind + 1, len(a)):
+            r = get_directions(str(origin.latitude) + ", " + str(origin.longitude), str(a[other_loc].latitude) + ", " + str(a[other_loc].longitude))
+            print(f"EC from: \n{origin} to \n{a[other_loc]} is {r.total}")
+            total = r.total
+            del r
+
+
+create_customer_graph()

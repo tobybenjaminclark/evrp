@@ -1,6 +1,5 @@
-from src_road_graph.road_get import *
+
 from src_road_graph.find_locations import *
-from keys import GOOGLE_API_KEY
 
 r = find_locations((52.9540, -1.150000), 3000, "Costa Coffee")
 for x in r:

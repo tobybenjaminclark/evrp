@@ -53,20 +53,31 @@ def max_speed(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, l
 
 
 # Find safe speed for a polyline
+from statistics import median
+from itertools import product
+
+
 def maximum_safe_speed(polyline: list[tuple[float, float]], distances: list[float], arcs_per_side: int = 15, max_speeds: list[float] = []) -> list[float]:
     """
     This function determines the (theoretical) maximum safe driving speed, for every point in the line, considering the
-    curvature (calculated aross multiple surrounding points, arcs_per_side). This calculation is based on the centrifrugal
+    curvature (calculated across multiple surrounding points, arcs_per_side). This calculation is based on the centrifugal
     force.
 
-    :polyline:      List of tuples representing the points (lang, long) on the polyline.
+    :polyline:      List of tuples representing the points (lat, long) on the polyline.
     :arcs_per_side: The number of points to consider on either side of the current point for curvature calculation.
     """
+    max_speeds.clear()
 
     for i in range(1, len(polyline) - 1, 1):
-        pre_c = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
-        post_c = [polyline[i + _i] for _i in filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
-        max_speeds.append(median([max_speed(*p1, polyline[i][0], polyline[i][1], *p2) * 3.6 for (p1, p2) in list(product(pre_c, post_c))]))
+        pre_c = [polyline[i + _i] for _i in
+                 filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
+        post_c = [polyline[i + _i] for _i in
+                  filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
+        if pre_c and post_c:
+            max_speeds.append(median([max_speed(*p1, polyline[i][0], polyline[i][1], *p2) * 3.6 for (p1, p2) in
+                                      list(product(pre_c, post_c))]))
+        else:
+            max_speeds.append(0.0)  # or some default value when not enough points are available
 
     # Pad out length
     pad_left = True

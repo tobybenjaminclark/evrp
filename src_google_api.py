@@ -147,3 +147,24 @@ def get_elevation_data(locations_str):
         return None
 
     return elevation_data_chunk
+
+
+def get_coordinates_from_keyword(keyword):
+    base_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    params = {
+        "query": keyword,
+        "key": GOOGLE_API_KEY
+    }
+
+    response = requests.get(base_url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        if data['status'] == 'OK':
+            place = data['results'][0]
+            location = place['geometry']['location']
+            latitude = location['lat']
+            longitude = location['lng']
+            return (latitude, longitude)
+        else:   raise Exception(f'Error: {response.status_code}\n{response.text}')
+    else:       raise Exception(f'Error: {response.status_code}\n{response.text}')

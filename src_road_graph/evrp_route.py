@@ -118,7 +118,14 @@ class Route():
         axis.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
     def calculate_speed_series(self):
+
         self.speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
+
+
+
+
+
+
 
     def plot_speed_series(self, axis):
 
@@ -247,7 +254,7 @@ class Route():
                 if current_speed < target_speed: current_speed = target_speed
 
             speeds.append(current_speed * 3.6)  # Convert m/s to km/h
-            distances_traveled.append(target_speed)
+            distances_traveled.append(current_distance)
             seconds.append(current_second)
 
             self.distances_travelled = distances_traveled
@@ -304,8 +311,8 @@ class Route():
             pwr = get_mechanical_power(speed_ms, gradient_degrees)
 
             # Print or store the result as needed
-            print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
-            print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
+            # print(f"Current Altitude: {current_altitude}, Next Altitude: {next_altitude}, Speed: {speed_ms}")
+            # print(f"Distance: {current_distance}, Gradient: {gradient_degrees:.2f} degrees, Power: {pwr}\n")
 
             if(np.isnan(pwr)):
                 continue
@@ -322,7 +329,7 @@ class Route():
             # print(f"Segment {segment}, at {x:.2f} W. New total is: {total:.2f} kWh")
             segment += 1
 
-        print(f"Total Power: {total:.2f} kWh")
+        # print(f"Total Power: {total:.2f} kWh")
 
         self.total = total
         self.cumulative = cumulative
