@@ -12,6 +12,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from enum import Enum
+import concurrent.futures
+from typing import List, Any
 
 location_types = Enum('location_type', ['customer', 'depot', 'charging_point'])
 
@@ -98,4 +100,42 @@ def create_customer_graph(origin = "Nottingham", radius = 2000, keyword = "KFC")
             del r
 
 
-create_customer_graph()
+# Assuming these functions are already defined:
+# get_coordinates_from_keyword, find_locations, get_directions
+
+def create_customer_graph2(origin: str = "Nottingham", radius: int = 2000, keyword: str = "KFC"):
+    a = find_locations(get_coordinates_from_keyword(origin), radius, keyword)
+
+    # Print the found locations
+    for x in a:
+        print(x)
+
+    def fetch_directions(origin_index: int, destination_index: int) -> tuple[Any, Any, float]:
+        try:
+            origin_loc = a[origin_index]
+            dest_loc = a[destination_index]
+            r = get_directions(
+                f"{origin_loc.latitude}, {origin_loc.longitude}",
+                f"{dest_loc.latitude}, {dest_loc.longitude}"
+            )
+            return origin_loc, dest_loc, r.total
+        except Exception as e:
+            print(f"Error fetching directions from {a[origin_index]} to {a[destination_index]}: {e}")
+            return a[origin_index], a[destination_index], None
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for ind, origin_loc in enumerate(a):
+            for other_loc_index in range(ind + 1, len(a)):
+                futures.append(executor.submit(fetch_directions, ind, other_loc_index))
+
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                origin, destination, total = future.result()
+                if total is not None:
+                    print(f"EC from: \n{origin} to \n{destination} is {total}")
+            except Exception as e:
+                print(f"Error processing future result: {e}")
+
+# Call the function
+create_customer_graph2()

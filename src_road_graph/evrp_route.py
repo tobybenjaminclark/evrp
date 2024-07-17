@@ -43,22 +43,33 @@ class Route():
     def __init__(self, response: dict, _origin: str, _destination: str):
         self.origin = _origin
         self.destination = _destination
-        self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
-        self.superpolyline = [point for step in self.steps for point in step.polyline]
-        self.distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
 
-        # Timing each method and logging the results
+        logging.info(f"Calculating Route: {self.origin} → {self.destination}")
+
+        start_time = timeit.default_timer()
+
+        self.steps: list[RouteStep] = list(map(parse_step, [step for route in response['routes'] for leg in route['legs'] for step in leg['steps']]))
+        step_time = timeit.default_timer()
+
+        self.superpolyline = [point for step in self.steps for point in step.polyline]
+
+        self.distances = [approximate_distance_from_polyline(self.superpolyline[0:n]) for n in range(0, len(self.superpolyline))]
+        distances_time = timeit.default_timer()
+
+        # Timing each method and logging the result
+        logging.info(f"{'processing_steps':<30}: {step_time - start_time:.6f} seconds")
+        logging.info(f"{'processing_steps':<30}: {distances_time - step_time:.6f} seconds")
         self.log_method_time(self.calculate_altitude_sampling, "calculate_altitude_sampling")
         self.log_method_time(self.calculate_speed_series, "calculate_speed_series")
         self.log_method_time(self.calculate_route_turning_speed, "calculate_route_turning_speed")
         self.log_method_time(self.calculate_seconds_speeds, "calculate_seconds_speeds")
-        self.log_method_time(self.calculate_energy_consumption, "calculate_energy_consumption")
+        self.log_method_time(self.calculate_energy_consumption, "calculate_energy_consumption", "\n")
 
-        self.plot_route_data()
+        # self.plot_route_data()
 
-    def log_method_time(self, method, method_name):
+    def log_method_time(self, method, method_name, suffix: str = ""):
         execution_time = timeit.timeit(method, number=1)
-        logging.info(f"{method_name:<30}: {execution_time:.6f} seconds")
+        logging.info(f"{method_name:<30}: {execution_time:.6f} seconds" + suffix)
 
     def calculate_altitude_sampling(self, pad_size: int = 40):
 

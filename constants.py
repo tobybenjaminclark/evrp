@@ -16,3 +16,7 @@ p = 1.2             # air density in kg/m^3
 # a is instantaneous vehicle acceleration
 # v, v(t) is vehicle speed
 # theta is road angle (in degrees)
+
+import re
+print(bool(re.match(r'[+-]?([0-9]*[.])?[0-9]+', "0")))
+print(bool(re.match(r'[+-]?([0-9]*[.])?[0-9]+', "312314123.4234232423")))

@@ -1,6 +1,8 @@
 import requests
 import statistics
 from keys import RME_API_KEY, RME_APP_ID
+import random
+import time
 
 def get_avg_speed_limit(coords):
     apikey = RME_API_KEY
@@ -12,6 +14,11 @@ def get_avg_speed_limit(coords):
     response = requests.post(query, data=data)
 
     # Hopefully this will be successful - if not, we're screwed :)
+    if response.status_code == 429:
+        print(f"Error: {response.status_code} - {response.text}")
+        time.sleep(random.randrange(3, 6))
+        return get_avg_speed_limit(coords)
+
     if response.status_code != 200:
         raise Exception(f"Error: {response.status_code} - {response.text}")
 
