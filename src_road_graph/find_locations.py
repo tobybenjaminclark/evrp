@@ -1,3 +1,5 @@
+import timeit
+
 import matplotlib.pyplot as plt
 from src_road_graph.road_get import *
 import requests
@@ -12,6 +14,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from enum import Enum
+import logging
 import concurrent.futures
 from typing import List, Any
 
@@ -103,7 +106,10 @@ def create_customer_graph(origin = "Nottingham", radius = 2000, keyword = "KFC")
 # Assuming these functions are already defined:
 # get_coordinates_from_keyword, find_locations, get_directions
 
-def create_customer_graph2(origin: str = "Nottingham", radius: int = 2000, keyword: str = "KFC"):
+def create_customer_graph2(origin: str = "Nottingham", radius: int = 500, keyword: str = "Greggs"):
+
+    start_time = timeit.default_timer()
+
     a = find_locations(get_coordinates_from_keyword(origin), radius, keyword)
 
     # Print the found locations
@@ -152,6 +158,11 @@ def create_customer_graph2(origin: str = "Nottingham", radius: int = 2000, keywo
                     print(f"EC from: \n{origin} to \n{destination} is {total}")
             except Exception as e:
                 print(f"Error processing future result: {e}")
+
+    end_time = timeit.default_timer()
+
+    logging.info(f"")
+    logging.info(f"Total Time Taken: {end_time - start_time}")
 
 # Call the function
 create_customer_graph2()
