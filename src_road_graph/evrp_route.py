@@ -41,10 +41,12 @@ def bright_colors_generator():
 class Route():
 
     def __init__(self, response: dict, _origin: str, _destination: str):
+
+        self.log_string = ""
         self.origin = _origin
         self.destination = _destination
 
-        logging.info(f"Calculating Route: {self.origin} → {self.destination}")
+        self.log_string += f"Calculating Route: {self.origin} → {self.destination}\n\n"
 
         start_time = timeit.default_timer()
 
@@ -57,19 +59,21 @@ class Route():
         distances_time = timeit.default_timer()
 
         # Timing each method and logging the result
-        logging.info(f"{'processing_steps':<30}: {step_time - start_time:.6f} seconds")
-        logging.info(f"{'processing_steps':<30}: {distances_time - step_time:.6f} seconds")
+        self.log_string += f"\t{'processing_steps':<30}: {step_time - start_time:.6f} seconds\n"
+        self.log_string += f"\t{'processing_steps':<30}: {distances_time - step_time:.6f} seconds\n"
         self.log_method_time(self.calculate_altitude_sampling, "calculate_altitude_sampling")
         self.log_method_time(self.calculate_speed_series, "calculate_speed_series")
         self.log_method_time(self.calculate_route_turning_speed, "calculate_route_turning_speed")
         self.log_method_time(self.calculate_seconds_speeds, "calculate_seconds_speeds")
         self.log_method_time(self.calculate_energy_consumption, "calculate_energy_consumption", "\n")
+        logging.info(self.log_string)
 
         # self.plot_route_data()
 
     def log_method_time(self, method, method_name, suffix: str = ""):
         execution_time = timeit.timeit(method, number=1)
-        logging.info(f"{method_name:<30}: {execution_time:.6f} seconds" + suffix)
+        self.log_string += f"\t{method_name:<30}: {execution_time:.6f} seconds" + suffix +"\n"
+
 
     def calculate_altitude_sampling(self, pad_size: int = 40):
 
