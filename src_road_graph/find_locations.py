@@ -111,6 +111,14 @@ def create_customer_graph2(origin: str = "Nottingham", radius: int = 2000, keywo
         print(x)
 
     def fetch_directions(origin_index: int, destination_index: int) -> tuple[Any, Any, float]:
+        origin_loc = a[origin_index]
+        dest_loc = a[destination_index]
+        r = get_directions(
+            f"{origin_loc.latitude}, {origin_loc.longitude}",
+            f"{dest_loc.latitude}, {dest_loc.longitude}"
+        )
+        return origin_loc, dest_loc, r.total
+
         try:
             origin_loc = a[origin_index]
             dest_loc = a[destination_index]
@@ -130,6 +138,14 @@ def create_customer_graph2(origin: str = "Nottingham", radius: int = 2000, keywo
                 futures.append(executor.submit(fetch_directions, ind, other_loc_index))
 
         for future in concurrent.futures.as_completed(futures):
+
+            origin, destination, total = future.result()
+            if total is not None:
+                print(f"EC from: \n{origin} to \n{destination}\n is {total}")
+            else:
+                print(f"Error?? {total}")
+            continue
+
             try:
                 origin, destination, total = future.result()
                 if total is not None:

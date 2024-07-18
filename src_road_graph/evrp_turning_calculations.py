@@ -5,7 +5,6 @@ from src_road_graph.evrp_route_utils import meters
 from constants import *
 
 
-
 # Function to convert degrees to radians
 def deg_to_rad(deg) -> float: return deg * np.pi / 180.0
 
@@ -52,9 +51,6 @@ def max_speed(lat1: float, lon1: float, lat2: float, lon2: float, lat3: float, l
 
 
 
-# Find safe speed for a polyline
-from statistics import median
-from itertools import product
 
 
 def maximum_safe_speed(polyline: list[tuple[float, float]], distances: list[float], arcs_per_side: int = 15, max_speeds: list[float] = []) -> list[float]:
@@ -71,8 +67,10 @@ def maximum_safe_speed(polyline: list[tuple[float, float]], distances: list[floa
     for i in range(1, len(polyline) - 1, 1):
         pre_c = [polyline[i + _i] for _i in
                  filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(-arcs_per_side, 0))]
+
         post_c = [polyline[i + _i] for _i in
                   filter(lambda v: v != 0 and (i + v) >= 0 and (i + v) < len(polyline), range(0, arcs_per_side))]
+
         if pre_c and post_c:
             max_speeds.append(median([max_speed(*p1, polyline[i][0], polyline[i][1], *p2) * 3.6 for (p1, p2) in
                                       list(product(pre_c, post_c))]))
@@ -82,7 +80,10 @@ def maximum_safe_speed(polyline: list[tuple[float, float]], distances: list[floa
     # Pad out length
     pad_left = True
     while (len(max_speeds) < len(polyline)):
-        if pad_left: max_speeds = [max_speeds[0]] + max_speeds
-        else: max_speeds = max_speeds + [max_speeds[-1]]
+        if pad_left: max_speeds.insert(0, max_speeds[0])
+        else: max_speeds.append(max_speeds[-1])
+
+    if(len(max_speeds) > len(polyline)):
+        return [1171 for _ in polyline]
 
     return max_speeds
