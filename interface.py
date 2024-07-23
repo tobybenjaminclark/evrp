@@ -1,6 +1,6 @@
 from tkinter import *
 from frame_start import GeneralFrame
-
+from frame_depots import DepotFrame
 from PIL import Image, ImageTk
 
 
@@ -46,7 +46,7 @@ class Window(Tk):
 
     def next_frame(self):
         self.frame1.grid_forget()
-        self.frame1 = GeneralFrame2(self)
+        self.frame1 = DepotFrame(self)
         self.frame1.grid(row = 1, column = 1)
 
     def configure_layout(self):

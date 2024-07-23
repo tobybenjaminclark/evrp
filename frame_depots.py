@@ -26,7 +26,7 @@ class LocationNodeFrame(Frame):
 
 
 
-class GeneralFrame(Frame):
+class DepotFrame(Frame):
     NUMBER_OF_TEXT_FIELDS = 4  # Define the number of text fields
 
     def __init__(self, master):
@@ -62,7 +62,7 @@ class GeneralFrame(Frame):
             n.grid(row=8 + i, column=0)
 
         # Add in Customer Info (total)
-        self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} Customers", command = lambda: self.submit_customers())
+        self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} Depot", command = lambda: self.submit_customers())
         self.submit_customers_button.grid(row = 8 + i + 1, column = 0)
 
     def remove_location(self, n: LocationNode):
@@ -71,14 +71,14 @@ class GeneralFrame(Frame):
         self.redraw()
 
     def submit_customers(self):
-        self.master.locations = [n.node for n in self.locnodes]
+        self.master.depots = [n.node for n in self.locnodes]
         self.master.next_frame()
 
 
     def configure_elements(self):
 
 
-        self.elements["Label1"] = Label(self, text = "Customer Location Node Creator\n\nPlease enter a Origin Location, i.e. Nottingham")
+        self.elements["Label1"] = Label(self, text = "Depot Location Node Creator\n\nPlease enter a Origin Location, i.e. Nottingham")
         self.elements["Entry1"] = Entry(self)
 
         self.elements["Label2"] = Label(self, text = "Please enter a Search Keyword, i.e. Costa")
@@ -95,4 +95,4 @@ class GeneralFrame(Frame):
         self.elements["Entry3"].grid(row = 6, column = 0)
 
 
-        self.elements["Submit"] = Button(self, text = "Search for Locations", command = lambda: self.add_locations()).grid(row = 7, column = 0, pady = 10)
+        self.elements["Submit"] = Button(self, text = "Search for Depots", command = lambda: self.add_locations()).grid(row = 7, column = 0, pady = 10)
