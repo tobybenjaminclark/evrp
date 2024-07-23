@@ -44,28 +44,36 @@ class GeneralFrame(Frame):
 
         locations = find_locations(get_coordinates_from_keyword(origin), radius, keyword)
         newlocnodes = [LocationNodeFrame(self, node) for node in locations]
+        self.locnodes.extend(newlocnodes)
+        self.redraw()
 
+    def redraw(self):
         # Remove existing
-        for n in self.locnodes: n.grid_forget()
+        for n in self.locnodes:
+            try: n.grid_forget()
+            except: pass
 
         try: self.submit_customers_button.grid_forget()
         except: pass
 
-        self.locnodes.extend(newlocnodes)
-
         # Correctly reference the new nodes in locnodes
         for i, n in enumerate(self.locnodes):
-            n.destroy_button.config(command=lambda n=n: n.grid_forget())
+            n.destroy_button.config(command=lambda n=n: self.remove_location(n))
             n.grid(row=8 + i, column=0)
-
 
         # Add in Customer Info (total)
         self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} Customers", command = lambda: self.submit_customers())
         self.submit_customers_button.grid(row = 8 + i + 1, column = 0)
 
+    def remove_location(self, n: LocationNode):
+        self.locnodes.remove(n)
+        n.grid_forget()
+        self.redraw()
+
     def submit_customers(self):
         self.master.locations = [n.node for n in self.locnodes]
         self.master.next_frame()
+
 
     def configure_elements(self):
 
