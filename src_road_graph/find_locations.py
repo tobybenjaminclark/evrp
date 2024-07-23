@@ -163,6 +163,3 @@ def create_customer_graph2(origin: str = "Nottingham", radius: int = 500, keywor
 
     logging.info(f"")
     logging.info(f"Total Time Taken: {end_time - start_time}")
-
-# Call the function
-create_customer_graph2()

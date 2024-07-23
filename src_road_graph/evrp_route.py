@@ -68,7 +68,7 @@ class Route():
         self.log_method_time(self.calculate_energy_consumption, "calculate_energy_consumption", "\n")
         logging.info(self.log_string)
 
-        # self.plot_route_data()
+        self.plot_route_data()
 
     def log_method_time(self, method, method_name, suffix: str = ""):
         execution_time = timeit.timeit(method, number=1)
