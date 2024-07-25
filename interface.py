@@ -1,6 +1,7 @@
 from tkinter import *
 from frame_start import LocationFrame
 from frame_depots import DepotFrame
+from frame_summary import SummaryFrame
 from frame_evs import EVFrame
 from PIL import Image, ImageTk
 
@@ -30,6 +31,8 @@ class Window(Tk):
         self.geometry("900x900")
         self.minsize(900, 900)
         self.locations = []
+        self.depots = []
+        self.ev_chargers = []
 
         # Load the PNG image
         image_path = "EVRPLogo.png"
@@ -50,7 +53,7 @@ class Window(Tk):
 
         if isinstance(self.frame1, LocationFrame): self.frame1 = DepotFrame(self)
         elif isinstance(self.frame1, DepotFrame): self.frame1 = EVFrame(self)
-
+        elif isinstance(self.frame1, EVFrame): self.frame1 = SummaryFrame(self)
 
         self.frame1.grid(row = 1, column = 1)
 
