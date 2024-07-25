@@ -1,8 +1,8 @@
-from evrp_route_utils import meters, haversine, approximate_distance_from_polyline, interpolate_polyline
+from src_road_graph.evrp_route_utils import meters, haversine, approximate_distance_from_polyline, interpolate_polyline
 from src_google_api import get_elevation_data
 from polyline import decode as polyline_decode
 from typing import Generator as generator
-from evrp_speed_limits import get_avg_speed_limit
+from src_road_graph.evrp_speed_limits import get_avg_speed_limit
 from dataclasses import dataclass
 import re
 

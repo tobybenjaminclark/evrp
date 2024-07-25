@@ -64,4 +64,4 @@ class SummaryFrame(Frame):
         self.elements["Label3"].grid(row = 3, column = 0, pady = 10)
 
 
-        self.elements["Submit"] = Button(self, text = "Generate Dataset", command = lambda: print("A")).grid(row = 4, column = 0, pady = 10)
+        self.elements["Submit"] = Button(self, text = "Generate Dataset", command = lambda: self.master.run()).grid(row = 4, column = 0, pady = 10)
