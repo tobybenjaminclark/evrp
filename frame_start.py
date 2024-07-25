@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import ImageTk, Image
-from src_road_graph.find_locations import find_locations, LocationNode
+from src_road_graph.find_locations import find_locations
+from src_road_graph.evrp_location_node import LocationNode
 from src_google_api import get_coordinates_from_keyword
 
 class LocationNodeFrame(Frame):
@@ -26,7 +27,7 @@ class LocationNodeFrame(Frame):
 
 
 
-class GeneralFrame(Frame):
+class LocationFrame(Frame):
     NUMBER_OF_TEXT_FIELDS = 4  # Define the number of text fields
 
     def __init__(self, master):

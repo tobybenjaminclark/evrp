@@ -1,6 +1,6 @@
 import requests
 from keys import OPEN_CHARGE_MAP_KEY
-from src_road_graph.find_locations import LocationNode
+from src_road_graph.evrp_location_node import LocationNode
 
 def find_ev_charging_points(latitude = 37.7749, longitude = -122.4194, count = 50):
 

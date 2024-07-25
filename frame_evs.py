@@ -2,6 +2,8 @@ from tkinter import *
 from PIL import ImageTk, Image
 from src_road_graph.find_locations import find_locations
 from src_road_graph.evrp_location_node import LocationNode
+from src_open_heat_map import find_ev_charging_points
+
 from src_google_api import get_coordinates_from_keyword
 
 class LocationNodeFrame(Frame):
@@ -27,7 +29,7 @@ class LocationNodeFrame(Frame):
 
 
 
-class DepotFrame(Frame):
+class EVFrame(Frame):
     NUMBER_OF_TEXT_FIELDS = 4  # Define the number of text fields
 
     def __init__(self, master):
@@ -40,10 +42,9 @@ class DepotFrame(Frame):
     def add_locations(self):
 
         origin = self.elements["Entry1"].get()
-        keyword = self.elements["Entry2"].get()
         radius = self.elements["Entry3"].get()
 
-        locations = find_locations(get_coordinates_from_keyword(origin), radius, keyword)
+        locations = find_ev_charging_points(*get_coordinates_from_keyword(origin), radius)
         newlocnodes = [LocationNodeFrame(self, node) for node in locations]
         self.locnodes.extend(newlocnodes)
         self.redraw()
@@ -63,7 +64,7 @@ class DepotFrame(Frame):
             n.grid(row=8 + i, column=0)
 
         # Add in Customer Info (total)
-        self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} Depot", command = lambda: self.submit_customers())
+        self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} EV Charging Points", command = lambda: self.submit_customers())
         self.submit_customers_button.grid(row = 8 + i + 1, column = 0)
 
     def remove_location(self, n: LocationNode):
@@ -72,26 +73,21 @@ class DepotFrame(Frame):
         self.redraw()
 
     def submit_customers(self):
-        self.master.depots = [n.node for n in self.locnodes]
+        self.master.ev_chargers = [n.node for n in self.locnodes]
         self.master.next_frame()
 
 
     def configure_elements(self):
 
 
-        self.elements["Label1"] = Label(self, text = "Depot Location Node Creator\n\nPlease enter a Origin Location, i.e. Nottingham")
+        self.elements["Label1"] = Label(self, text = "EV Charging Point Finder\n\nPlease enter a Origin Location, i.e. Nottingham")
         self.elements["Entry1"] = Entry(self)
 
-        self.elements["Label2"] = Label(self, text = "Please enter a Search Keyword, i.e. Costa")
-        self.elements["Entry2"] = Entry(self)
-
-        self.elements["Label3"] = Label(self, text = "Please enter a Radius in Metres to search")
+        self.elements["Label3"] = Label(self, text = "Please enter a number to to add")
         self.elements["Entry3"] = Entry(self)
 
         self.elements["Label1"].grid(row = 1, column = 0)
         self.elements["Entry1"].grid(row = 2, column = 0)
-        self.elements["Label2"].grid(row = 3, column = 0)
-        self.elements["Entry2"].grid(row = 4, column = 0)
         self.elements["Label3"].grid(row = 5, column = 0)
         self.elements["Entry3"].grid(row = 6, column = 0)
 

@@ -22,11 +22,7 @@ log_file_name = f"EVRPLog-{current_time}.log"
 log_file_path = os.path.join('logs', log_file_name)
 
 # Configure logging to write to a file in logs/
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    handlers=[
-                        logging.FileHandler(log_file_path)
-                    ])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler(log_file_path)])
 
 def bright_colors_generator():
     less_bright_colors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9', '#ffffff', '#000000']
@@ -36,11 +32,9 @@ def bright_colors_generator():
         yield less_bright_colors[index % len(less_bright_colors)]
         index += 1
 
-
-
 class Route():
 
-    def __init__(self, response: dict, _origin: str, _destination: str):
+    def __init__(self, response: dict, _origin: str, _destination: str, plot = False):
 
         self.log_string = ""
         self.origin = _origin
@@ -68,12 +62,11 @@ class Route():
         self.log_method_time(self.calculate_energy_consumption, "calculate_energy_consumption", "\n")
         logging.info(self.log_string)
 
-        self.plot_route_data()
+        if plot: self.plot_route_data()
 
     def log_method_time(self, method, method_name, suffix: str = ""):
         execution_time = timeit.timeit(method, number=1)
         self.log_string += f"\t{method_name:<30}: {execution_time:.6f} seconds" + suffix +"\n"
-
 
     def calculate_altitude_sampling(self, pad_size: int = 40):
 
@@ -133,14 +126,7 @@ class Route():
         axis.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, pos: f'{y:.0f}m'))
 
     def calculate_speed_series(self):
-
         self.speed_series = [step.road_speed for step in self.steps for _ in step.polyline]
-
-
-
-
-
-
 
     def plot_speed_series(self, axis):
 
