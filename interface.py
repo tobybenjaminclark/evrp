@@ -6,7 +6,7 @@ from src_road_graph.evrp_location_node import LocationNode
 from frame_evs import EVFrame
 from src_road_graph.find_locations import create_customer_graph2
 from PIL import Image, ImageTk
-
+import csv
 
 
 
@@ -74,9 +74,31 @@ class Window(Tk):
         for i3, node in enumerate(self.ev_chargers):
             node.set_id("e", i3)
 
+        nodes = self.locations + self.ev_chargers + self.depots
+
         if (not self.has_run):
             self.has_run = True
             x = create_customer_graph2(self.locations, self.depots, self.ev_chargers)
+
+            # Initialize matrix
+            node_ids = [node.id for node in nodes]
+            matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
+
+            # Fill in the matrix
+            for node in nodes:
+                for dest_id, energy in node.journeys:
+                    matrix[node.id][dest_id] = energy
+
+            # Write to CSV
+            with open('node_journeys.csv', 'w', newline='') as csvfile:
+                fieldnames = [''] + node_ids
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for node_id in node_ids:
+                    row = {'': node_id}
+                    row.update(matrix[node_id])
+                    writer.writerow(row)
 
 
 
