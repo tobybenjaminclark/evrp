@@ -52,7 +52,7 @@ def create_customer_graph2(customers, depots, evs):
             f"{origin_loc.latitude}, {origin_loc.longitude}",
             f"{dest_loc.latitude}, {dest_loc.longitude}"
         )
-        origin_loc.journeys.append((dest_loc.id, r.total))
+        origin_loc.journeys.append((dest_loc.id, r.total, r.time_taken))
         return origin_loc, dest_loc, r.total
 
 

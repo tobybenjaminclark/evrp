@@ -258,9 +258,11 @@ class Route():
             distances_traveled.append(current_distance)
             seconds.append(current_second)
 
-            self.distances_travelled = distances_traveled
-            self.seconds = seconds
-            self.speeds = speeds
+        self.distances_travelled = distances_traveled
+        self.seconds = seconds
+        self.time_taken = max(seconds)
+        self.speeds = speeds
+
 
     def plot_real_speed_series(self, axis):
 
@@ -276,6 +278,8 @@ class Route():
         axis.set_ylim(0, max(self.speeds))
         axis.set_xlim(0, max(self.seconds))
         axTwin.set_ylim(0, max(self.distances_travelled))
+
+        self.time_taken = max(self.seconds)
 
         # Adding legends
         axis.legend(loc='upper left')

@@ -68,11 +68,11 @@ class Window(Tk):
     def run(self):
 
         for i1, node in enumerate(self.locations):
-            node.set_id("c", i1)
+            node.set_id("C", i1)
         for i2, node in enumerate(self.depots):
-            node.set_id("d", i2)
+            node.set_id("D", i2)
         for i3, node in enumerate(self.ev_chargers):
-            node.set_id("e", i3)
+            node.set_id("E", i3)
 
         nodes = self.locations + self.ev_chargers + self.depots
 
@@ -82,11 +82,13 @@ class Window(Tk):
 
             # Initialize matrix
             node_ids = [node.id for node in nodes]
-            matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
 
-            # Fill in the matrix
+            matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
+            time_matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
+
             for node in nodes:
-                for dest_id, energy in node.journeys:
+                for dest_id, energy, time_taken in node.journeys:
+                    time_matrix[node.id][dest_id] = time_taken
                     matrix[node.id][dest_id] = energy
 
             # Write to CSV
@@ -94,13 +96,19 @@ class Window(Tk):
                 fieldnames = [''] + node_ids
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
+                # Write EC matrix.
                 writer.writeheader()
                 for node_id in node_ids:
                     row = {'': node_id}
                     row.update(matrix[node_id])
                     writer.writerow(row)
 
-
+                # Write time Matrix.
+                writer.writeheader()
+                for node_id in node_ids:
+                    row = {'': node_id}
+                    row.update(time_matrix[node_id])
+                    writer.writerow(row)
 
 
     def mainloop(self):
