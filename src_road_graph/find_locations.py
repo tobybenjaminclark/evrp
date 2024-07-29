@@ -30,7 +30,7 @@ def get_directions(origin, destination):
     return r
 
 def result_to_location(result: dict) -> LocationNode:
-    return LocationNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'])
+    return LocationNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'])
 
 def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[LocationNode]:
     results: dict = google_nearby_search(location, radius, keyword, type)
@@ -79,5 +79,6 @@ def create_customer_graph2(customers, depots, evs):
 
 if __name__ == "__main__":
     a = google_nearby_search((51.574088, 0.486017), 5000, "Costa", PlaceType.NONE)
+
     for p in a:
         print(p['name'], " :: ", p['rating'])

@@ -1,7 +1,7 @@
 class LocationNode():
 
     # Constructor Method for a Location Node
-    def __init__(self, _latitude: float, _longitude: float, _name: str = '') -> None:
+    def __init__(self, _latitude: float, _longitude: float, _name: str = '', rating: float|None = None) -> None:
         self.latitude: float = _latitude
         self.longitude: float = _longitude
         self.label: str = _name
