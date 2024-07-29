@@ -78,4 +78,6 @@ def create_customer_graph2(customers, depots, evs):
     logging.info(f"Total Time Taken: {end_time - start_time}")
 
 if __name__ == "__main__":
-    create_customer_graph2()
+    a = google_nearby_search((51.574088, 0.486017), 5000, "Costa", PlaceType.NONE)
+    for p in a:
+        print(p['name'], " :: ", p['rating'])
