@@ -80,34 +80,49 @@ class Window(Tk):
             self.has_run = True
             x = create_customer_graph2(self.locations, self.depots, self.ev_chargers)
 
-            # Initialize matrix
+            # Initialize matrices
             node_ids = [node.id for node in nodes]
 
+            # Create an initial matrix with infinite values, except for the diagonal
             matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
-            time_matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
+            time_matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in
+                           node_ids}
 
+            # Populate matrices with energy consumption and time taken
             for node in nodes:
                 for dest_id, energy, time_taken in node.journeys:
-                    time_matrix[node.id][dest_id] = time_taken
                     matrix[node.id][dest_id] = energy
+                    time_matrix[node.id][dest_id] = time_taken
+
+            # Initialize the location matrix with demand values
+            location_matrix = {node.id: {'demand': 0} for node in self.locations}
+            for cnode in self.locations:
+                location_matrix[cnode.id]['demand'] = cnode.demand
 
             # Write to CSV
             with open('node_journeys.csv', 'w', newline='') as csvfile:
-                fieldnames = [''] + node_ids
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer = csv.writer(csvfile)
 
-                # Write EC matrix.
-                writer.writeheader()
+                # Write customer demands
+                writer.writerow(['Customer Demand'])
+                writer.writerow(['Node ID', 'Demand'])
+                for node_id in location_matrix.keys():
+                    writer.writerow([node_id, location_matrix[node_id]['demand']])
+
+                # Write EC matrix header
+                writer.writerow([])  # Empty line for separation
+                writer.writerow(['EC Matrix'])
+                writer.writerow([''] + node_ids)  # Header row
                 for node_id in node_ids:
-                    row = {'': node_id}
-                    row.update(matrix[node_id])
+                    row = [node_id] + [matrix[node_id][nid] for nid in node_ids]
                     writer.writerow(row)
 
-                # Write time Matrix.
-                writer.writeheader()
+                # Write time matrix header
+                writer.writerow([])  # Empty line for separation
+                writer.writerow(['Time Matrix'])
+                writer.writerow([''] + node_ids)  # Header row
                 for node_id in node_ids:
-                    row = {'': node_id}
-                    row.update(time_matrix[node_id])
+                    row = [node_id] + [time_matrix[node_id][nid] for nid in node_ids]
                     writer.writerow(row)
 
 
