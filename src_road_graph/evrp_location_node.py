@@ -8,6 +8,10 @@ class LocationNode():
         self.label: str = _name
         self.id: str = None
         self.journeys: list[tuple[str, float]] = []
+        self.time_slot: tuple[int, int] = [0, 0]
+
+    def set_time_slot(self, start_time: int, end_time: int) -> None:
+        self.time_slot = (start_time, end_time)
 
     def __repr__(self) -> str:
         return f"{self.label}\t@\t{self.latitude}, {self.longitude}"

@@ -74,6 +74,15 @@ class Window(Tk):
         for i3, node in enumerate(self.ev_chargers):
             node.set_id("E", i3)
 
+        # set time slots
+        time_slot_length = 60
+        current_time = 0
+        for index, node in enumerate(self.locations):
+            if (current_time + time_slot_length) > 1440: current_time = 0
+
+            node.time_slot = (current_time, current_time + time_slot_length)
+            current_time += time_slot_length
+
         nodes = self.locations + self.ev_chargers + self.depots
 
         if (not self.has_run):
@@ -95,9 +104,11 @@ class Window(Tk):
                     time_matrix[node.id][dest_id] = time_taken
 
             # Initialize the location matrix with demand values
-            location_matrix = {node.id: {'demand': 0} for node in self.locations}
+            location_matrix = {node.id: {'demand': 0, 'start_of_slot': 0, 'end_of_slot': 0} for node in self.locations}
             for cnode in self.locations:
                 location_matrix[cnode.id]['demand'] = cnode.demand
+                location_matrix[cnode.id]['start_of_slot'] = cnode.time_slot[0]
+                location_matrix[cnode.id]['end_of_slot'] = cnode.time_slot[1]
 
             # Write to CSV
             with open('node_journeys.csv', 'w', newline='') as csvfile:
@@ -105,9 +116,9 @@ class Window(Tk):
 
                 # Write customer demands
                 writer.writerow(['Customer Demand'])
-                writer.writerow(['Node ID', 'Demand'])
+                writer.writerow(['Node ID', 'Demand', 'Start of Time Slot', 'End of Time Slot'])
                 for node_id in location_matrix.keys():
-                    writer.writerow([node_id, location_matrix[node_id]['demand']])
+                    writer.writerow([node_id, location_matrix[node_id]['demand'], location_matrix[node_id]['start_of_slot'], location_matrix[node_id]['end_of_slot']])
 
                 # Write EC matrix header
                 writer.writerow([])  # Empty line for separation
