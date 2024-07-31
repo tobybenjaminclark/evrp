@@ -5,7 +5,7 @@ def load_json(path: str) -> dict|Exception:
     with open(path, 'r') as config_file: return load(config_file)
 
 def build_generator(path: str):
-    return
+    return None
 
 @dataclass
 class CustomerNodeGenerator():
