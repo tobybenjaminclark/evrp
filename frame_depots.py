@@ -1,15 +1,16 @@
 from tkinter import *
 from PIL import ImageTk, Image
 from src_road_graph.find_locations import find_locations
-from src_road_graph.evrp_location_node import LocationNode
+from src_road_graph.evrp_location_node import  CustomerNode, DepotNode, EVChargeNode
 from src_google_api import get_coordinates_from_keyword
 
 class LocationNodeFrame(Frame):
 
-    def __init__(self, master, node: LocationNode):
+    def __init__(self, master, node: DepotNode):
         super().__init__(master)
         self.master = master
-        self.node: LocationNode = node
+        self.node: DepotNode = node[0]
+        self.node_label: str = node[1]
         self.build_node()
 
     def build_node(self):
@@ -18,7 +19,7 @@ class LocationNodeFrame(Frame):
         self.lang_long_label.grid(row = 0, column = 0)
 
         self.label = Entry(self, width = 30)
-        self.label.insert(END, self.node.label)
+        self.label.insert(END, self.node_label)
         self.label.grid(row = 0, column = 1, padx = 10)
 
         self.destroy_button = Button(self, text = "Remove")
@@ -66,7 +67,7 @@ class DepotFrame(Frame):
         self.submit_customers_button = Button(self, text = f"Proceed with {len(self.locnodes)} Depot", command = lambda: self.submit_customers())
         self.submit_customers_button.grid(row = 8 + i + 1, column = 0)
 
-    def remove_location(self, n: LocationNode):
+    def remove_location(self, n: DepotNode):
         self.locnodes.remove(n)
         n.grid_forget()
         self.redraw()

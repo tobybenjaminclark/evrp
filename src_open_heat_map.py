@@ -25,7 +25,18 @@ def find_ev_charging_points(latitude = 37.7749, longitude = -122.4194, count = 5
 
         # Print the charging points
         for point in charging_points:
-            nodes.append(LocationNode(point['AddressInfo']['Latitude'], point['AddressInfo']['Longitude'], point['AddressInfo']['Title'] + " " + str(point['ID'])))
+
+            # Extract and print charge rates
+            highest_rate = 0;
+            connections = point.get('Connections', [])
+            for connection in connections:
+                power_kw = connection.get('PowerKW', 'N/A')
+                print(f"Connection Type: {connection.get('ConnectionType', {}).get('Title', 'N/A')}")
+                print(f"Power Rating: {power_kw} kW")
+                if power_kw > highest_rate:
+                    highest_rate = power_kw
+
+            nodes.append((EVChargeNode(point['AddressInfo']['Latitude'], point['AddressInfo']['Longitude'], highest_rate, "E1"), point['AddressInfo']['Title']))
     else:
         print(f"Error: {response.status_code}")
         print(response.json())

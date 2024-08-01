@@ -11,6 +11,7 @@ def calculate_journeys(customers, depots, chargers):
     start_time = timeit.default_timer()
     a = customers + depots + chargers
 
+    # Little function
     def fetch_directions(origin_index: int, destination_index: int) -> tuple[any, any, float]:
         origin_loc = a[origin_index]
         dest_loc = a[destination_index]
@@ -20,18 +21,14 @@ def calculate_journeys(customers, depots, chargers):
 
         return origin_loc, dest_loc, r.total
 
+    # Execute
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for ind, origin_loc in enumerate(a):
-            for other_loc_index in range(0, len(a)):
-                if(ind == other_loc_index): continue
-                futures.append(executor.submit(fetch_directions, ind, other_loc_index))
-
-        for future in concurrent.futures.as_completed(futures):
-            origin, destination, total = future.result()
-            if total is not None: print(f"EC from: \n{origin} to \n{destination}\n is {total}")
-            else:                 print(f"Error?? {total}")
-            continue
+        _ = [
+            executor.submit(fetch_directions, ind, other_loc_index)
+            for ind, origin_loc in enumerate(a)
+            for other_loc_index in range(len(a))
+            if ind != other_loc_index
+        ]
 
     end_time = timeit.default_timer()
 

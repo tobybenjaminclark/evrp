@@ -30,7 +30,7 @@ def get_directions(origin, destination):
     return r
 
 def result_to_location(result: dict) -> CustomerNode:
-    return CustomerNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'])
+    return (CustomerNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'], "C0"), result['name'])
 
 def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[CustomerNode]:
     results: dict = google_nearby_search(location, radius, keyword, type)

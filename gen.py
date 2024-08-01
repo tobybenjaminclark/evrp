@@ -62,9 +62,10 @@ def build_generator(path: str):
     return Generator(customers, depots, chargers, config['output_path'], config['instance_id'])
 
 if __name__ == "__main__":
-    g=build_generator("test.json")
+    g=build_generator("test2.json")
     i = g.run()
     print(i)
+    i.write("test.output")
 
 
 

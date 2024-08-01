@@ -2,12 +2,11 @@ from tkinter import *
 from frame_start import LocationFrame
 from frame_depots import DepotFrame
 from frame_summary import SummaryFrame
-from src_road_graph.evrp_location_node import LocationNode
+from src_road_graph.evrp_location_node import CustomerNode, DepotNode, EVChargeNode
 from frame_evs import EVFrame
-from src_road_graph.find_locations import create_customer_graph2
 from PIL import Image, ImageTk
 import csv
-
+import json
 
 
 class GeneralFrame2(Frame):
@@ -32,10 +31,10 @@ class Window(Tk):
         super().__init__()
         self.geometry("900x900")
         self.minsize(900, 900)
-        self.locations: list[LocationNode] = []
+        self.locations: list[CustomerNode] = []
         self.has_run = False
-        self.depots: list[LocationNode] = []
-        self.ev_chargers: list[LocationNode] = []
+        self.depots: list[DepotNode] = []
+        self.ev_chargers: list[EVChargeNode] = []
 
         # Load the PNG image
         image_path = "EVRPLogo.png"
@@ -68,74 +67,31 @@ class Window(Tk):
     def run(self):
 
         for i1, node in enumerate(self.locations):
-            node.set_id("C", i1)
+            node.id = "C" + str(i1)
         for i2, node in enumerate(self.depots):
-            node.set_id("D", i2)
+            node.id = "C" + str(i2)
         for i3, node in enumerate(self.ev_chargers):
-            node.set_id("E", i3)
+            node.id = "C" + str(i3)
 
         # set time slots
         time_slot_length = 60
         current_time = 0
         for index, node in enumerate(self.locations):
             if (current_time + time_slot_length) > 1440: current_time = 0
-
             node.time_slot = (current_time, current_time + time_slot_length)
             current_time += time_slot_length
 
-        nodes = self.locations + self.ev_chargers + self.depots
-
         if (not self.has_run):
             self.has_run = True
-            x = create_customer_graph2(self.locations, self.depots, self.ev_chargers)
 
-            # Initialize matrices
-            node_ids = [node.id for node in nodes]
+            output_dict = {}
+            d_custs = [{"latitude": l.latitude, "longitude": l.longitude, "demand": l.demand, "start_time":l.time_slot[0], "end_time":l.time_slot[1] } for l in self.locations]
+            d_depots = [{"latitude": l.latitude, "longitude": l.longitude } for l in self.depots]
+            d_evs = [{"latitude": l.latitude, "longitude": l.longitude, "charge_rate": l.charge_rate} for l in self.ev_chargers]
+            d = {"customers": d_custs, "depots": d_depots, "chargers": d_evs, "output_path": "outputs/", "instance_id": "geoff"}
 
-            # Create an initial matrix with infinite values, except for the diagonal
-            matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in node_ids}
-            time_matrix = {node_id: {nid: 0 if nid == node_id else float('inf') for nid in node_ids} for node_id in
-                           node_ids}
-
-            # Populate matrices with energy consumption and time taken
-            for node in nodes:
-                for dest_id, energy, time_taken in node.journeys:
-                    matrix[node.id][dest_id] = energy
-                    time_matrix[node.id][dest_id] = time_taken
-
-            # Initialize the location matrix with demand values
-            location_matrix = {node.id: {'demand': 0, 'start_of_slot': 0, 'end_of_slot': 0} for node in self.locations}
-            for cnode in self.locations:
-                location_matrix[cnode.id]['demand'] = cnode.demand
-                location_matrix[cnode.id]['start_of_slot'] = cnode.time_slot[0]
-                location_matrix[cnode.id]['end_of_slot'] = cnode.time_slot[1]
-
-            # Write to CSV
-            with open('node_journeys.csv', 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-
-                # Write customer demands
-                writer.writerow(['Customer Demand'])
-                writer.writerow(['Node ID', 'Demand', 'Start of Time Slot', 'End of Time Slot'])
-                for node_id in location_matrix.keys():
-                    writer.writerow([node_id, location_matrix[node_id]['demand'], location_matrix[node_id]['start_of_slot'], location_matrix[node_id]['end_of_slot']])
-
-                # Write EC matrix header
-                writer.writerow([])  # Empty line for separation
-                writer.writerow(['EC Matrix'])
-                writer.writerow([''] + node_ids)  # Header row
-                for node_id in node_ids:
-                    row = [node_id] + [matrix[node_id][nid] for nid in node_ids]
-                    writer.writerow(row)
-
-                # Write time matrix header
-                writer.writerow([])  # Empty line for separation
-                writer.writerow(['Time Matrix'])
-                writer.writerow([''] + node_ids)  # Header row
-                for node_id in node_ids:
-                    row = [node_id] + [time_matrix[node_id][nid] for nid in node_ids]
-                    writer.writerow(row)
-
+            # Write to JSON file
+            with open('test2.json', 'w') as file: json.dump(d, file, indent=4)
 
     def mainloop(self):
         while True:
