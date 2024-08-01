@@ -1,5 +1,6 @@
 from json import load
 from dataclasses import dataclass
+from src_road_graph
 
 @dataclass
 class CustomerNodeGenerator():
@@ -25,6 +26,8 @@ class Generator():
     customers: list[CustomerNodeGenerator]
     depots: list[DepotNodeGenerator]
     chargers: list[EVChargePointNodeGenerator]
+    output_path: str
+    instance_id: str
 
 def load_json(path: str) -> dict|Exception:
     with open(path, 'r') as config_file: return load(config_file)
@@ -44,11 +47,11 @@ def build_generator(path: str):
     try: config = load_json(path)
     except Exception as e: raise Exception(f"Failed to open configuration file: {e}")
 
-    print(config)
-
     customers: list[CustomerNodeGenerator] = [build_customer_generator(c) for c in config['customers']]
     depots: list[DepotNodeGenerator] = [build_depot_node_generator(d) for d in config['depots']]
     chargers: list[EVChargePointNodeGenerator] = [build_ev_node_generator(ev) for ev in config['chargers']]
+
+    return Generator(customers, depots, chargers, config['output_path'], config['instance_id'])
 
 if __name__ == "__main__":
     build_generator("test.json")

@@ -1,4 +1,6 @@
 {
+  "output_path": "test/",
+  "instance_id": "1231A",
   "customers": [
     {
       "latitude": 100,
