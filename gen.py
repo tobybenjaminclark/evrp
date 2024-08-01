@@ -1,10 +1,11 @@
 from json import load
 from dataclasses import dataclass
-from src_road_graph.evrp_location_node import LocationNode
+from src_road_graph.evrp_location_node import *
+from generate import generate_evrp_instance
 
 @dataclass
 class Instance():
-    in: int
+    inq: int
 
 @dataclass
 class CustomerNodeGenerator():
@@ -34,8 +35,10 @@ class Generator():
     instance_id: str
 
     def run(self) -> Instance:
-        pass
-
+        cust_nodes = [CustomerNode(c.latitude, c.longitude, (c.start_time, c.end_time), c.demand, "C" + str(i)) for i, c in enumerate(self.customers)]
+        depot_nodes = [DepotNode(c.latitude, c.longitude, "D" + str(i)) for i, c in enumerate(self.depots)]
+        chargers = [EVChargeNode(c.latitude, c.longitude, c.charge_rate, "E" + str(i)) for i, c in enumerate(self.chargers)]
+        return generate_evrp_instance(cust_nodes, depot_nodes, chargers)
 
 def load_json(path: str) -> dict|Exception:
     with open(path, 'r') as config_file: return load(config_file)
@@ -62,7 +65,8 @@ def build_generator(path: str):
     return Generator(customers, depots, chargers, config['output_path'], config['instance_id'])
 
 if __name__ == "__main__":
-    build_generator("test.json")
+    g=build_generator("test.json")
+    g.run()
 
 
 

@@ -45,9 +45,8 @@ class CustomerNode:
     longitude: float
     time_slot: Tuple[int, int]
     demand: float
+    id: str
     journeys: List[Tuple[str, float]] = field(default_factory=list)
-    id: Optional[str] = None
-    label: str = "Empty"
 
 
 
@@ -63,7 +62,7 @@ class DepotNode:
     """
     latitude: float
     longitude: float
-    label: str = "Empty"
+    id: str
 
 
 
@@ -84,6 +83,6 @@ class EVChargeNode:
     latitude: float
     longitude: float
     charge_rate: float
+    id: str
     journeys: List[Tuple[str, float]] = field(default_factory=list)
-    id: Optional[str] = None
-    label: str = "Empty"
+
