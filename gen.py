@@ -1,6 +1,10 @@
 from json import load
 from dataclasses import dataclass
-from src_road_graph
+from src_road_graph.evrp_location_node import LocationNode
+
+@dataclass
+class Instance():
+    in: int
 
 @dataclass
 class CustomerNodeGenerator():
@@ -28,6 +32,10 @@ class Generator():
     chargers: list[EVChargePointNodeGenerator]
     output_path: str
     instance_id: str
+
+    def run(self) -> Instance:
+        pass
+
 
 def load_json(path: str) -> dict|Exception:
     with open(path, 'r') as config_file: return load(config_file)
