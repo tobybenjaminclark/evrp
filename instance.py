@@ -4,6 +4,8 @@ import csv
 
 @dataclass
 class CustomerInstance():
+    """ Class representing an output instance for a `customer` node in an EVRP Benchmark. """
+
     demand: float
     start_time: int
     end_time: int
@@ -15,6 +17,8 @@ class CustomerInstance():
 
 @dataclass
 class DepotInstance():
+    """ Class representing an output instance for a `depot` node in an EVRP Benchmark. """
+
     id: str
     journeys_energy: list[tuple[str, float]]
     journeys_time: list[tuple[str, int]]
@@ -23,6 +27,8 @@ class DepotInstance():
 
 @dataclass
 class EVChargeInstance:
+    """ Class representing an output instance for a `charger` node in an EVRP Benchmark. """
+
     charge_rate: float
     id: str
     journeys_energy: list[tuple[str, float]]
@@ -32,6 +38,8 @@ class EVChargeInstance:
 
 @dataclass
 class Instance():
+    """ Class representing an output instance for in an EVRP Benchmark. """
+
     customers: list[CustomerInstance]
     depots: list[DepotInstance]
     chargers: list[EVChargeInstance]
@@ -61,7 +69,7 @@ class Instance():
             location_matrix[cnode.id]['end_of_slot'] = cnode.end_time
 
         # Write to CSV
-        csvfile = open('node_journeys.csv', 'w', newline='')
+        csvfile = open(file_path, 'w', newline='')
 
         writer = csv.writer(csvfile)
 
