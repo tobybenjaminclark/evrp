@@ -2,10 +2,7 @@ from json import load
 from dataclasses import dataclass
 from src_road_graph.evrp_location_node import *
 from generate import generate_evrp_instance
-
-@dataclass
-class Instance():
-    inq: int
+from instance import Instance
 
 @dataclass
 class CustomerNodeGenerator():
@@ -66,7 +63,8 @@ def build_generator(path: str):
 
 if __name__ == "__main__":
     g=build_generator("test.json")
-    g.run()
+    i = g.run()
+    print(i)
 
 
 

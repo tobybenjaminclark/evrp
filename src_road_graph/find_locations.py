@@ -2,7 +2,7 @@ import timeit
 
 import matplotlib.pyplot as plt
 from src_road_graph.road_get import *
-from src_road_graph.evrp_location_node import LocationNode
+from src_road_graph.evrp_location_node import CustomerNode, EVChargeNode, DepotNode
 from src_open_heat_map import find_ev_charging_points
 import requests
 from enum import Enum
@@ -29,10 +29,10 @@ def get_directions(origin, destination):
     r = Route(response.json(), origin, destination)
     return r
 
-def result_to_location(result: dict) -> LocationNode:
-    return LocationNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'])
+def result_to_location(result: dict) -> CustomerNode:
+    return CustomerNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'])
 
-def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[LocationNode]:
+def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[CustomerNode]:
     results: dict = google_nearby_search(location, radius, keyword, type)
     return list(map(result_to_location, results))
 
