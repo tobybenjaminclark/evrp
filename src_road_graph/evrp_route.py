@@ -12,6 +12,7 @@ import logging
 import timeit
 import os
 from datetime import datetime
+from tqdm import tqdm
 
 # Ensure the logs directory exists
 os.makedirs('logs', exist_ok=True)
@@ -34,8 +35,9 @@ def bright_colors_generator():
 
 class Route():
 
-    def __init__(self, response: dict, _origin: str, _destination: str, plot = False):
+    def __init__(self, response: dict, _origin: str, _destination: str, pbar: tqdm = None, plot = False):
 
+        self.pbar = pbar
         self.log_string = ""
         self.origin = _origin
         self.destination = _destination

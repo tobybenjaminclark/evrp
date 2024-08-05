@@ -20,14 +20,14 @@ import logging
 from src_road_graph.evrp_route import Route
 import concurrent.futures
 from typing import List, Any
+from tqdm import tqdm
 
 location_types = Enum('location_type', ['customer', 'depot', 'charging_point'])
 
-def get_directions(origin, destination):
+def get_directions(origin, destination, pbar: tqdm = None):
     url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={GOOGLE_API_KEY}"
     response = requests.get(url)
-    r = Route(response.json(), origin, destination)
-    return r
+    return Route(response.json(), origin, destination, pbar)
 
 def result_to_location(result: dict) -> CustomerNode:
     return (CustomerNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'], "C0"), result['name'])
