@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from src_road_graph.evrp_location_node import *
 from generate import generate_evrp_instance
 from instance_dataclass import Instance
-
+import re
 
 
 @dataclass
@@ -47,13 +47,18 @@ class Generator():
     output_path: str
     instance_id: str
 
+    # Metadata about the Generator (i.e. how was the data made?)
+    instance_generation_type: str
+    window_generation_type: str
+    customer_count: int
+    charger_count: int
+    instance_number: int
+
+
     def run(self) -> Instance:
         """ Function to generate and return an EVRP Instance from a generator """
 
-        cust_nodes = [CustomerNode(c.latitude, c.longitude, (c.start_time, c.end_time), c.demand, "C" + str(i)) for i, c in enumerate(self.customers)]
-        depot_nodes = [DepotNode(c.latitude, c.longitude, "D" + str(i)) for i, c in enumerate(self.depots)]
-        chargers = [EVChargeNode(c.latitude, c.longitude, c.charge_rate, "E" + str(i)) for i, c in enumerate(self.chargers)]
-        return generate_evrp_instance(cust_nodes, depot_nodes, chargers)
+        return generate_evrp_instance(self)
 
 
 
@@ -85,6 +90,31 @@ def build_ev_node_generator(ev_dict: dict) -> EVChargePointNodeGenerator:
 
 
 
+def parse_instance_id(instance_id: str) -> tuple[str, str, int, int, int]:
+
+    # Get instance generation type
+    if(instance_id.startswith("RC")): instance_generation_type = "HALF RANDOM HALF CLUSTERED"
+    elif(instance_id.startswith("RL")): instance_generation_type = "REALISTIC"
+    elif(instance_id.startswith("C")): instance_generation_type = "CLUSTERED"
+    elif(instance_id.startswith("R")): instance_generation_type = "RANDOM"
+
+    remaining_part = re.sub(r'^\D*', '', instance_id)
+
+    # Get time window type
+    if(instance_id[0]) == 1: window_generation_type = "NARROW"
+    elif(instance_id[0]) == 2: window_generation_type = "MODERATE"
+    else: window_generation_type = "WIDE"
+
+    remaining_part = remaining_part[1:]
+
+    # Get instance id
+    instance_number, customer_count, charger_count = remaining_part.split("_")
+
+    return (instance_generation_type, window_generation_type, int(instance_number), int(customer_count), int(charger_count))
+
+
+
+
 def build_generator(path: str):
     """ Function to construct a generator from a configuration file. """
 
@@ -95,7 +125,8 @@ def build_generator(path: str):
     return Generator([build_customer_generator(c) for c in config['customers']],
                      [build_depot_node_generator(d) for d in config['depots']],
                     [build_ev_node_generator(ev) for ev in config['chargers']],
-                     config['output_path'], config['instance_id'])
+                     config['output_path'], config['instance_id'],
+                     *parse_instance_id(config['instance_id']))
 
 
 
@@ -103,7 +134,7 @@ if __name__ == "__main__":
     g=build_generator("test2.json")
     i = g.run()
     print(i)
-    i.write("test.output")
+    i.write()
 
 
 

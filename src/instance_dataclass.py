@@ -43,8 +43,9 @@ class Instance():
     customers: list[CustomerInstance]
     depots: list[DepotInstance]
     chargers: list[EVChargeInstance]
+    generator: "Generator"
 
-    def write(self, file_path: str):
+    def write(self, file_path: str = ""):
 
         nodes = self.customers +  self.depots +  self.chargers
         node_ids = [node.id for node in nodes]
@@ -69,7 +70,7 @@ class Instance():
             location_matrix[cnode.id]['end_of_slot'] = cnode.end_time
 
         # Write to CSV
-        csvfile = open(file_path, 'w', newline='')
+        csvfile = open(file_path + self.generator.instance_id + ".csv", 'w', newline='')
 
         writer = csv.writer(csvfile)
 
