@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from scipy.stats import truncnorm
 from generator_dataclass import Generator, DepotNodeGenerator, CustomerNodeGenerator, EVChargePointNodeGenerator
 from random import choice, shuffle
+from autogen_dataclass import *
 
 proportion_mappings = ["R", "C", "RL", "R_C", "R_RL", "C_RL", "R_C_RL"]
 tw_proportion_mappings = ["R", "S"]
@@ -39,7 +40,7 @@ def generate_list(proportions, n):
     return elements
 
 @dataclass
-class MultipleInstanceGenerator:
+class MultipleAutoInstanceGenerator:
 
     instance_count: int
     central_locations: list[tuple[float, float]]
@@ -77,24 +78,18 @@ class MultipleInstanceGenerator:
 
         # Generate Sampling Proportions, for Customers, Depots & Chargers
         mk_map = lambda p: generate_list(dict(zip(proportion_mappings, p)), self.instance_count)
-        self.cgen_p, self.dgen_p, self.egen_p = mk_map(self.cgen_p), mk_map(self.dgen_p), mk_map(self.egen_p)
+        cgen_p, dgen_p, egen_p = mk_map(self.cgen_p), mk_map(self.dgen_p), mk_map(self.egen_p)
 
         # Generate Sampling Proportions for Time Windows
-        self.twtyp_p = generate_list(dict(zip(tw_type_mappings, self.twtyp_p)), self.instance_count)
-        self.twgen_p = generate_list(dict(zip(tw_proportion_mappings, self.twgen_p)), self.instance_count)
+        twtyp_p = generate_list(dict(zip(tw_type_mappings, self.twtyp_p)), self.instance_count)
+        twgen_p = generate_list(dict(zip(tw_proportion_mappings, self.twgen_p)), self.instance_count)
 
-        print(cust_c)
-        print(charge_c)
-        print(depot_c)
-        print(locations)
-        print(self.cgen_p)
-        print(self.dgen_p)
-        print(self.egen_p)
-        print(self.twgen_p)
-        print(self.twtyp_p)
+        instance_params = zip(cust_c, charge_c, depot_c, locations, cgen_p, dgen_p, egen_p, twgen_p, twtyp_p)
+        autogens = [AutoGenerator(*i) for i in instance_params]
 
+        for a in autogens: print(a)
 
-a = MultipleInstanceGenerator(
+a = MultipleAutoInstanceGenerator(
     10,
     ["Nottingham"],
     10,
@@ -113,7 +108,7 @@ a.build()
 
 
 
-def parse_mass_generator(file_path: str) -> MultipleInstanceGenerator:
+def parse_mass_generator(file_path: str) -> MultipleAutoInstanceGenerator:
     # Read the JSON file
     with open(file_path, 'r') as file:
         data = json.load(file)
@@ -127,7 +122,7 @@ def parse_mass_generator(file_path: str) -> MultipleInstanceGenerator:
     minimum_depots = data.get('minimum_depots')
 
     # Create an instance of MultipleInstanceGenerator
-    return MultipleInstanceGenerator(
+    return MultipleAutoInstanceGenerator(
         instance_count=instance_count,
         central_locations=central_locations,
         minimum_customers=minimum_customers,
