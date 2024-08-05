@@ -1,25 +1,8 @@
-import timeit
-
-import matplotlib.pyplot as plt
-from src_road_graph.road_get import *
-from src_road_graph.evrp_location_node import CustomerNode, EVChargeNode, DepotNode
-from src_open_heat_map import find_ev_charging_points
+from src.src_road_graph.evrp_location_node import CustomerNode
+from src.src_apis.src_google_api import *
 import requests
 from enum import Enum
-from keys import GOOGLE_API_KEY
-from src_google_api import *
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
-import requests
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
-from enum import Enum
-import logging
-from src_road_graph.evrp_route import Route
-import concurrent.futures
-from typing import List, Any
+from src.src_road_graph.evrp_route import Route
 from tqdm import tqdm
 
 location_types = Enum('location_type', ['customer', 'depot', 'charging_point'])

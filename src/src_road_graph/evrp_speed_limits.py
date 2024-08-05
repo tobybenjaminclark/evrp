@@ -1,6 +1,6 @@
 import requests
 import statistics
-from keys import RME_API_KEY, RME_APP_ID
+from src.keys import RME_API_KEY, RME_APP_ID
 import random
 import time
 

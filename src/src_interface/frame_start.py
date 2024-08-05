@@ -1,8 +1,7 @@
 from tkinter import *
-from PIL import ImageTk, Image
 from src_road_graph.find_locations import find_locations
-from src_road_graph.evrp_location_node import CustomerNode, DepotNode, EVChargeNode
-from src_google_api import get_coordinates_from_keyword
+from src_road_graph.evrp_location_node import CustomerNode
+from src_apis.src_google_api import get_coordinates_from_keyword
 
 class LocationNodeFrame(Frame):
 

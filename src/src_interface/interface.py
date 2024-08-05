@@ -91,7 +91,7 @@ class Window(Tk):
             d = {"customers": d_custs, "depots": d_depots, "chargers": d_evs, "output_path": "outputs/", "instance_id": "geoff"}
 
             # Write to JSON file
-            with open('test2.json', 'w') as file: json.dump(d, file, indent=4)
+            with open('../test2.json', 'w') as file: json.dump(d, file, indent=4)
 
     def mainloop(self):
         while True:

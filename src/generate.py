@@ -3,7 +3,7 @@ import logging
 import concurrent.futures
 import timeit
 from src_road_graph.find_locations import get_directions
-from instance import *
+from instance_dataclass import *
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 

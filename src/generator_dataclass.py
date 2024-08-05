@@ -2,7 +2,7 @@ from json import load
 from dataclasses import dataclass
 from src_road_graph.evrp_location_node import *
 from generate import generate_evrp_instance
-from instance import Instance
+from instance_dataclass import Instance
 
 
 
