@@ -44,6 +44,7 @@ class MultipleAutoInstanceGenerator:
 
     instance_count: int
     central_locations: list[tuple[float, float]]
+    range: int
 
     minimum_customers: int
     maximum_customers: int
@@ -75,6 +76,7 @@ class MultipleAutoInstanceGenerator:
         depot_c  = generate_truncated_normal_samples(self.minimum_depots, self.maximum_depots, self.instance_count)
         depot_c = [int(max(self.minimum_depots, min(self.maximum_depots, c))) for c in depot_c]
         locations = [choice(self.central_locations) for _ in range(self.instance_count)]
+        ranges = [self.range for _ in raneg(self.instance_count)]
 
         # Generate Sampling Proportions, for Customers, Depots & Chargers
         mk_map = lambda p: generate_list(dict(zip(proportion_mappings, p)), self.instance_count)
@@ -84,14 +86,15 @@ class MultipleAutoInstanceGenerator:
         twtyp_p = generate_list(dict(zip(tw_type_mappings, self.twtyp_p)), self.instance_count)
         twgen_p = generate_list(dict(zip(tw_proportion_mappings, self.twgen_p)), self.instance_count)
 
-        instance_params = zip(cust_c, charge_c, depot_c, locations, cgen_p, dgen_p, egen_p, twgen_p, twtyp_p)
+        instance_params = zip(cust_c, charge_c, depot_c, locations, ranges, cgen_p, dgen_p, egen_p, twgen_p, twtyp_p)
         autogens = [AutoGenerator(*i) for i in instance_params]
 
         for a in autogens: print(a)
 
 a = MultipleAutoInstanceGenerator(
     10,
-    ["Nottingham"],
+    [(-1, 1)],
+    4000,
     10,
     20,
     10,
