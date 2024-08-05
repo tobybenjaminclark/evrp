@@ -20,44 +20,30 @@ def calculate_journeys(customers, depots, chargers) -> tuple[list[CustomerNode],
         origin_loc.je.append((dest_loc.id, r.total))
         return origin_loc, dest_loc, r.total
 
-    total_tasks = (len(a) * (len(a) - 1))
+    pbar = tqdm(total = (len(a) * (len(a) - 1)))
     with ThreadPoolExecutor() as executor:
         # Use tqdm to create a progress bar
-        with tqdm(total = total_tasks) as pbar:
-            futures = [
-                executor.submit(fetch_directions, ind, other_loc_index, pbar)
-                for ind in range(len(a))
-                for other_loc_index in range(len(a))
-                if ind != other_loc_index
-            ]
+        futures = [
+            executor.submit(fetch_directions, ind, other_loc_index, pbar)
+            for ind in range(len(a))
+            for other_loc_index in range(len(a))
+            if ind != other_loc_index
+        ]
 
-            # Update progress bar as tasks complete
-            for _ in as_completed(futures):
-                pbar.update(1)
+        # Update progress bar as tasks complete
+        for _ in as_completed(futures):
+            pbar.update(1)
 
+    pbar.close()
     end_time = timeit.default_timer()
     logging.info(f"Total Time Taken (to calculate Journeys): {end_time - start_time}")
 
 def generate_evrp_instance(customers: list[CustomerNode], depots: list[DepotNode], chargers: list[EVChargeNode]) -> Instance:
     calculate_journeys(customers, depots, chargers)
 
-    for c in customers:
-        print(c)
-    for d in depots:
-        print(d)
-    for ch in chargers:
-        print(ch)
-
     # Generate Node Instances & Return List
     cust_instances = [CustomerInstance(c.demand, c.time_slot[0], c.time_slot[1], c.id, c.je, c.jt) for c in customers]
     depot_instances = [DepotInstance(c.id, c.je, c.jt) for c in depots]
     charger_instances = [EVChargeInstance(c.charge_rate, c.id, c.je, c.jt) for c in chargers]
-
-    for c in cust_instances:
-        print(c)
-    for d in depot_instances:
-        print(d)
-    for ch in charger_instances:
-        print(ch)
 
     return Instance(cust_instances, depot_instances, charger_instances)
