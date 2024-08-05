@@ -5,6 +5,8 @@ from generator_dataclass import Generator, DepotNodeGenerator, CustomerNodeGener
 from random import choice, shuffle
 
 proportion_mappings = ["R", "C", "RL", "R_C", "R_RL", "C_RL", "R_C_RL"]
+tw_proportion_mappings = ["R", "S"]
+tw_type_mappings = ["NARROW", "MODERATE", "WIDE"]
 
 def generate_truncated_normal_samples(min_val: float, max_val: float, n: int, std_dev: float = 3.0) -> list[float]:
     return truncnorm.rvs((min_val - (min_val + max_val) / 2) / std_dev,
@@ -54,6 +56,10 @@ class MultipleInstanceGenerator:
     dgen_p: list[float]
     egen_p: list[float]
 
+    # Time Window Sampling
+    twgen_p: list[float]
+    twtyp_p: list[float]
+
     def build(self) -> list[Generator]:
 
         # Get a nomral distributor of customer counts.
@@ -64,16 +70,18 @@ class MultipleInstanceGenerator:
         charge_c = generate_truncated_normal_samples(self.minimum_chargers, self.maximum_chargers, self.instance_count)
         charge_c = [int(max(self.minimum_chargers, min(self.maximum_chargers, c))) for c in charge_c]
 
-        # Get a normal distribution of depot counts.
+        # Get a normal distribution of depot counts, and locations
         depot_c  = generate_truncated_normal_samples(self.minimum_depots, self.maximum_depots, self.instance_count)
         depot_c = [int(max(self.minimum_depots, min(self.maximum_depots, c))) for c in depot_c]
-
-        # Get random locations
         locations = [choice(self.central_locations) for _ in range(self.instance_count)]
 
-        # Make Proportions
+        # Generate Sampling Proportions, for Customers, Depots & Chargers
         mk_map = lambda p: generate_list(dict(zip(proportion_mappings, p)), self.instance_count)
         self.cgen_p, self.dgen_p, self.egen_p = mk_map(self.cgen_p), mk_map(self.dgen_p), mk_map(self.egen_p)
+
+        # Generate Sampling Proportions for Time Windows
+        self.twtyp_p = generate_list(dict(zip(tw_type_mappings, self.twtyp_p)), self.instance_count)
+        self.twgen_p = generate_list(dict(zip(tw_proportion_mappings, self.twgen_p)), self.instance_count)
 
         print(cust_c)
         print(charge_c)
@@ -82,6 +90,8 @@ class MultipleInstanceGenerator:
         print(self.cgen_p)
         print(self.dgen_p)
         print(self.egen_p)
+        print(self.twgen_p)
+        print(self.twtyp_p)
 
 
 a = MultipleInstanceGenerator(
@@ -95,7 +105,9 @@ a = MultipleInstanceGenerator(
     20,
     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0],
     [100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    [50.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    [50.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [50.0, 50.0],
+    [30.0, 70.0, 0.0]
 )
 a.build()
 
