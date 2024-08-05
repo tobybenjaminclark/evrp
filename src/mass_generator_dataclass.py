@@ -2,7 +2,9 @@ import json
 from dataclasses import dataclass
 from scipy.stats import truncnorm
 from generator_dataclass import Generator, DepotNodeGenerator, CustomerNodeGenerator, EVChargePointNodeGenerator
-from random import choice
+from random import choice, shuffle
+
+proportion_mappings = ["R", "C", "RL", "R_C", "R_RL", "C_RL", "R_C_RL"]
 
 def generate_truncated_normal_samples(min_val: float, max_val: float, n: int, std_dev: float = 3.0) -> list[float]:
     return truncnorm.rvs((min_val - (min_val + max_val) / 2) / std_dev,
@@ -11,27 +13,46 @@ def generate_truncated_normal_samples(min_val: float, max_val: float, n: int, st
                          scale = std_dev,
                          size = n)
 
+
+def validate_proportions(proportions):
+    total = sum(proportions.values())
+    return total == 100
+
+
+def generate_list(proportions, n):
+    # Validate proportions
+    if not validate_proportions(proportions): raise ValueError("Proportions must add up to 100.")
+
+    # Create a list based on the proportions
+    elements = []
+    for key, proportion in proportions.items():
+        count = int(n * proportion / 100)
+        elements.extend([key] * count)
+
+    # Adjust the list to ensure it has exactly n elements (handle rounding issues)
+    while len(elements) < n: elements.append(choice(list(proportions.keys())))
+    while len(elements) > n: elements.pop()
+
+    shuffle(elements)  # Shuffle to ensure randomness
+    return elements
+
 @dataclass
 class MultipleInstanceGenerator:
 
     instance_count: int
-
     central_locations: list[tuple[float, float]]
 
     minimum_customers: int
     maximum_customers: int
-
     minimum_chargers: int
     maximum_chargers: int
-
     minimum_depots: int
     maximum_depots: int
 
-    # sampling types i.e. clustered, random clustered etc...
-    time_window_generation_type: int
-    customer_generation_type: int
-    charger_generation_type: int
-    depot_generation_type: int
+    # Sampling Types
+    cgen_p: list[float]
+    dgen_p: list[float]
+    egen_p: list[float]
 
     def build(self) -> list[Generator]:
 
@@ -50,10 +71,17 @@ class MultipleInstanceGenerator:
         # Get random locations
         locations = [choice(self.central_locations) for _ in range(self.instance_count)]
 
+        # Make Proportions
+        mk_map = lambda p: generate_list(dict(zip(proportion_mappings, p)), self.instance_count)
+        self.cgen_p, self.dgen_p, self.egen_p = mk_map(self.cgen_p), mk_map(self.dgen_p), mk_map(self.egen_p)
 
         print(cust_c)
         print(charge_c)
         print(depot_c)
+        print(locations)
+        print(self.cgen_p)
+        print(self.dgen_p)
+        print(self.egen_p)
 
 
 a = MultipleInstanceGenerator(
@@ -65,6 +93,9 @@ a = MultipleInstanceGenerator(
     20,
     10,
     20,
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0],
+    [100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [50.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 )
 a.build()
 
