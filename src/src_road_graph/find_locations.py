@@ -12,7 +12,7 @@ def get_directions(origin, destination, pbar: tqdm = None):
     response = requests.get(url)
     return Route(response.json(), origin, destination, pbar)
 
-def result_to_location(result: dict) -> CustomerNode:
+def result_to_location(result: dict) -> tuple[CustomerNode, str]:
     return (CustomerNode(result['geometry']['location']['lat'], result['geometry']['location']['lng'], result['name'], result['rating'], "C0"), result['name'])
 
 def find_locations(location: tuple[float, float], radius: int, keyword: str = "", type: PlaceType = PlaceType.NONE) -> list[CustomerNode]:

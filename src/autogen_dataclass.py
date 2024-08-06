@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from generator_dataclass import Generator, DepotNodeGenerator, CustomerNodeGenerator, EVChargePointNodeGenerator
 from geopy.distance import geodesic
 from random import uniform, gauss
+from src_road_graph.find_locations import find_locations
+from src_apis.src_google_api import PlaceType
 from math import ceil
 
 
@@ -20,7 +22,7 @@ def generate_customers_random(c_count: int, centre: tuple[float, float], range_m
         # Create a CustomerNodeGenerator object and add to the list
         customers.append(CustomerNodeGenerator(destination.latitude, destination.longitude, 0, 0, 0))
 
-    return customers
+    return customers[:count]
 
 
 
@@ -29,6 +31,9 @@ def generate_customers_clustered(count: int, centre: tuple[float, float], range_
     cluster_count = max(1, ceil(count / 6))  # Ensure at least one cluster
     customers_per_cluster = ceil(count / cluster_count)
     cluster_range_m = range_m / 10  # The range for each cluster around its center
+
+    # Randomly assign each customer to a cluster!
+    # ...
 
     for _ in range(cluster_count):
         # Generate a center point for each cluster
@@ -52,8 +57,16 @@ def generate_customers_clustered(count: int, centre: tuple[float, float], range_
 
 
 
-def generate_customers_realistic(count: int, centre: tuple[float, float], range: int) -> list[CustomerNodeGenerator]:
-    return []
+def generate_customers_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+
+    customers = []
+    while(len(customers) < count):
+        locs = find_locations(centre, range_m, "", type = PlaceType.RESTAURANT)
+        for loc, name in locs:
+            if(len(customers) < count): customers.append(CustomerNodeGenerator(loc.latitude, loc.longitude, loc.demand, 0, 0))
+            else: break
+
+    return customers[:count]
 
 
 
@@ -114,5 +127,5 @@ class AutoGenerator:
             print(f"{c.latitude},{c.longitude},#00FF00,marker,{name}")
         pass
 
-a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 5000, "C", "R", "R", "R", "R")
+a = AutoGenerator(10, 10, 10, (52.949836, -1.147872), 8000, "RL", "R", "R", "R", "R")
 a.build()
