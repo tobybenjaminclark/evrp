@@ -8,7 +8,7 @@ from math import ceil
 
 
 
-def generate_customers_random(c_count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_random(c_count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
     customers = []
 
     for _ in range(0, c_count):
@@ -26,7 +26,7 @@ def generate_customers_random(c_count: int, centre: tuple[float, float], range_m
 
 
 
-def generate_customers_clustered(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_clustered(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
     customers = []
     cluster_count = max(1, ceil(count / 6))  # Ensure at least one cluster
     customers_per_cluster = ceil(count / cluster_count)
@@ -57,7 +57,7 @@ def generate_customers_clustered(count: int, centre: tuple[float, float], range_
 
 
 
-def generate_customers_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
 
     ptypes = [PlaceType.ATM, PlaceType.CAFE, PlaceType.PARKING, PlaceType.STORE, PlaceType.RESTAURANT, PlaceType.SUPERMARKET]
     customers = []
@@ -75,31 +75,20 @@ def generate_customers_realistic(count: int, centre: tuple[float, float], range_
 
 
 
-def generate_customers(customer_sampling: str, customer_count: int, centre: tuple[float, float], range: int) -> list[CustomerNodeGenerator]:
-    match customer_sampling:
-        case "R":
-            return generate_customers_random(customer_count, centre, range)
-        case "C":
-            return generate_customers_clustered(customer_count, centre, range)
-        case "RL":
-            return generate_customers_realistic(customer_count, centre, range)
-        case "R_C":
-            random_count = customer_count // 2
-            clustered_count = customer_count - random_count
-            return generate_customers_random(random_count, centre, range) + generate_customers_clustered(clustered_count, centre, range)
-        case "R_RL":
-            random_count = customer_count // 2
-            realistic_count = customer_count - random_count
-            return generate_customers_random(random_count, centre, range) + generate_customers_realistic(realistic_count, centre, range)
-        case "C_RL":
-            clustered_count = customer_count // 2
-            realistic_count = customer_count - clustered_count
-            return generate_customers_clustered(clustered_count, centre, range) + generate_customers_realistic(realistic_count, centre, range)
-        case "R_C_RL":
-            random_count = customer_count // 3
-            clustered_count = (customer_count - random_count) // 2
-            realistic_count = customer_count - random_count - clustered_count
-            return generate_customers_random(random_count, centre, range) + generate_customers_clustered(clustered_count, centre, range) + generate_customers_realistic(realistic_count, centre, range)
+def generate_customers(samp: str, num: int, centre: tuple[float, float], max_dist: int) -> list[CustomerNodeGenerator]:
+
+    rando = lambda c: genp_random(c, centre, max_dist)
+    clust = lambda c: genp_clustered(c, centre, max_dist)
+    reali = lambda c: genp_realistic(c, centre, max_dist)
+
+    match samp:
+        case "R":       return rando(num)
+        case "C":       return clust(num)
+        case "RL":      return reali(num)
+        case "R_C":     return rando(num // 2) + clust(num - num // 2)
+        case "R_RL":    return rando(num // 2) + reali(num - num // 2)
+        case "C_RL":    return clust(num // 2) + reali(num - num // 2)
+        case "R_C_RL":  return rando(num // 3) + clust((num - num // 3) // 2) + reali(num - num // 3 - (num - num // 3) // 2)
         case _:
             raise Exception("Customer sampling does not match any of predefined constants.")
 
@@ -132,5 +121,5 @@ class AutoGenerator:
             print(f"{c.latitude},{c.longitude},#00FF00,marker,{name}")
         pass
 
-a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "RL", "R", "R", "R", "R")
+a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "R_C_RL", "R", "R", "R", "R")
 a.build()
