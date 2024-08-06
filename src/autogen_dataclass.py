@@ -22,7 +22,7 @@ def generate_customers_random(c_count: int, centre: tuple[float, float], range_m
         # Create a CustomerNodeGenerator object and add to the list
         customers.append(CustomerNodeGenerator(destination.latitude, destination.longitude, 0, 0, 0))
 
-    return customers[:count]
+    return customers[:c_count]
 
 
 
@@ -59,12 +59,17 @@ def generate_customers_clustered(count: int, centre: tuple[float, float], range_
 
 def generate_customers_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
 
+    ptypes = [PlaceType.ATM, PlaceType.CAFE, PlaceType.PARKING, PlaceType.STORE, PlaceType.RESTAURANT, PlaceType.SUPERMARKET]
     customers = []
-    while(len(customers) < count):
-        locs = find_locations(centre, range_m, "", type = PlaceType.RESTAURANT)
+    while(len(customers) < count and len(ptypes) > 0):
+        locs = find_locations(centre, range_m, "", type = ptypes.pop(0))
         for loc, name in locs:
             if(len(customers) < count): customers.append(CustomerNodeGenerator(loc.latitude, loc.longitude, loc.demand, 0, 0))
             else: break
+
+    # Could always switch to random/clustered?
+    if(len(customers) < count):
+        raise Exception("Couldn't find enough customers for realistic generation.")
 
     return customers[:count]
 
@@ -127,5 +132,5 @@ class AutoGenerator:
             print(f"{c.latitude},{c.longitude},#00FF00,marker,{name}")
         pass
 
-a = AutoGenerator(10, 10, 10, (52.949836, -1.147872), 8000, "RL", "R", "R", "R", "R")
+a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "RL", "R", "R", "R", "R")
 a.build()
