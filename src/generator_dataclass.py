@@ -130,7 +130,7 @@ def build_generator(path: str):
 
 
 if __name__ == "__main__":
-    g=build_generator("R_C_RL31_3_3.spec")
+    g=build_generator("R_C_RL26_4_2.spec")
     i = g.run()
     print(i)
     i.write()

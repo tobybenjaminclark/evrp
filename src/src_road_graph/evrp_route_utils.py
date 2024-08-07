@@ -9,7 +9,7 @@ import math
 meters: type = type("meters", (), {})
 
 
-def haversine(_point_one: float, _point_two: float, earth_radius: meters = 6_387_000) -> meters:
+def haversine(_point_one: tuple[float, float], _point_two: tuple[float, float], earth_radius: meters = 6_387_000) -> meters:
     """
     The haversine formula determines the great-circle distance between two points on a sphere given their longitudes and
     latitudes, (See https://w.wiki/4Aj7). This is used to determine the distance between points in a polyline, when

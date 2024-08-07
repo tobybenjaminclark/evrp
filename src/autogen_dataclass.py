@@ -8,7 +8,8 @@ from src_apis.src_google_api import PlaceType
 from math import ceil
 from random import randrange, randint
 from json import dump
-
+from itertools import combinations
+from src_road_graph.evrp_route_utils import haversine
 
 def generate_random_windows(customers: list[CustomerNodeGenerator], window_length: int, horizon: tuple[int, int]) -> None:
     for customer in customers:
@@ -55,7 +56,7 @@ def genp_random(c_count: int, centre: tuple[float, float], range_m: int, _type: 
         destination = geodesic(kilometers = distance_m).destination(centre, bearing)
 
         # Create a CustomerNodeGenerator object and add to the list
-        customers.append((destination.longitude, destination.latitude))
+        customers.append((destination.latitude, destination.longitude))
 
     # Map points back to desired type.
     if _type is CustomerNodeGenerator: customers = list(map(lambda v: CustomerNodeGenerator(*v, randrange(0, 50) / 10, 0, 0), customers))
@@ -115,7 +116,7 @@ def genp_realistic(count: int, centre: tuple[float, float], range_m: int, _type:
 
     # Could always switch to random/clustered?
     if(len(customers) < count):
-        raise Exception("Couldn't find enough customers for realistic generation.")
+        raise Exception(f"Couldn't find enough customers for realistic generation, found {len(customers)}, required {count}.\n Centre is {centre}")
 
     return customers[:count]
 
@@ -194,7 +195,10 @@ class AutoGenerator:
             "instance_id": instance_id
         }
 
-        # Step 3: Write the dictionary to the JSON file
+        # Longest distance between any 2 points
+        longest_dist = max([haversine((n1.latitude, n1.longitude), (n2.latitude, n2.longitude)) for n1, n2 in combinations(customers + depots + chargers, 2)])
+        print(f"Longest distance between any 2 nodes is {longest_dist}m")
+
         filename = instance_id + ".spec"
         with open(filename, 'w') as file:
             dump(generator_data, file, indent = 4)  # `indent=4` for pretty printing

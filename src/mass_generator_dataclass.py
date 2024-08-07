@@ -10,7 +10,8 @@ tw_proportion_mappings = ["R", "S"]
 tw_type_mappings = ["NARROW", "MODERATE", "WIDE"]
 
 def generate_truncated_normal_samples(min_val: float, max_val: float, n: int, std_dev: float = 3.0) -> list[float]:
-    return truncnorm.rvs((min_val - (min_val + max_val) / 2) / std_dev,
+    if(min_val == max_val): return [min_val for _ in range(n)]
+    else: return truncnorm.rvs((min_val - (min_val + max_val) / 2) / std_dev,
                          (max_val - (min_val + max_val) / 2) / std_dev,
                          loc = (min_val + max_val) / 2,
                          scale = std_dev,
@@ -38,6 +39,8 @@ def generate_list(proportions, n):
 
     shuffle(elements)  # Shuffle to ensure randomness
     return elements
+
+
 
 @dataclass
 class MultipleAutoInstanceGenerator:
@@ -85,25 +88,28 @@ class MultipleAutoInstanceGenerator:
         # Generate Sampling Proportions for Time Windows
         twtyp_p = generate_list(dict(zip(tw_type_mappings, self.twtyp_p)), self.instance_count)
         twgen_p = generate_list(dict(zip(tw_proportion_mappings, self.twgen_p)), self.instance_count)
+        ids = [num for num in range(1, self.instance_count + 1)]
 
-        instance_params = zip(cust_c, charge_c, depot_c, locations, ranges, cgen_p, dgen_p, egen_p, twgen_p, twtyp_p)
+        instance_params = zip(cust_c, charge_c, depot_c, locations, ranges, cgen_p, dgen_p, egen_p, twgen_p, twtyp_p, ids)
         autogens = [AutoGenerator(*i) for i in instance_params]
 
-        for a in autogens: print(a)
+        for a in autogens:
+            a.build()
+
 
 a = MultipleAutoInstanceGenerator(
     10,
-    [(-1, 1)],
-    4000,
-    10,
-    20,
-    10,
-    20,
-    10,
-    20,
-    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0],
-    [100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    [50.0, 50.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [(52.953466, -1.150105)],
+    8000,
+    3,
+    5,
+    1,
+    1,
+    2,
+    3,
+    [0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0],
     [50.0, 50.0],
     [30.0, 70.0, 0.0]
 )
