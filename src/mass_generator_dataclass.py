@@ -76,7 +76,7 @@ class MultipleAutoInstanceGenerator:
         depot_c  = generate_truncated_normal_samples(self.minimum_depots, self.maximum_depots, self.instance_count)
         depot_c = [int(max(self.minimum_depots, min(self.maximum_depots, c))) for c in depot_c]
         locations = [choice(self.central_locations) for _ in range(self.instance_count)]
-        ranges = [self.range for _ in raneg(self.instance_count)]
+        ranges = [self.range for _ in range(self.instance_count)]
 
         # Generate Sampling Proportions, for Customers, Depots & Chargers
         mk_map = lambda p: generate_list(dict(zip(proportion_mappings, p)), self.instance_count)

@@ -8,7 +8,7 @@ from math import ceil
 
 
 
-def genp_random(c_count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_random(c_count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]|list[DepotNodeGenerator]|list[EVChargePointNodeGenerator]:
     customers = []
 
     for _ in range(0, c_count):
@@ -26,7 +26,7 @@ def genp_random(c_count: int, centre: tuple[float, float], range_m: int) -> list
 
 
 
-def genp_clustered(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_clustered(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]|list[DepotNodeGenerator]|list[EVChargePointNodeGenerator]:
     customers = []
     cluster_count = max(1, ceil(count / 6))  # Ensure at least one cluster
     customers_per_cluster = ceil(count / cluster_count)
@@ -57,7 +57,7 @@ def genp_clustered(count: int, centre: tuple[float, float], range_m: int) -> lis
 
 
 
-def genp_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]:
+def genp_realistic(count: int, centre: tuple[float, float], range_m: int) -> list[CustomerNodeGenerator]|list[DepotNodeGenerator]|list[EVChargePointNodeGenerator]:
 
     ptypes = [PlaceType.ATM, PlaceType.CAFE, PlaceType.PARKING, PlaceType.STORE, PlaceType.RESTAURANT, PlaceType.SUPERMARKET]
     customers = []
@@ -73,13 +73,16 @@ def genp_realistic(count: int, centre: tuple[float, float], range_m: int) -> lis
 
     return customers[:count]
 
+def genp_ev(c: int, centre: tuple[float, float], range_m: int) -> list[EVChargePointNodeGenerator]:
+
+    return []
 
 
-def generate_customers(samp: str, num: int, centre: tuple[float, float], max_dist: int) -> list[CustomerNodeGenerator]:
+def generate_customers(samp: str, num: int, centre: tuple[float, float], max_dist: int, _type: type) -> list[CustomerNodeGenerator]|list[DepotNodeGenerator]|list[EVChargePointNodeGenerator]:
 
-    rando = lambda c: genp_random(c, centre, max_dist)
-    clust = lambda c: genp_clustered(c, centre, max_dist)
-    reali = lambda c: genp_realistic(c, centre, max_dist)
+    rando = lambda c: genp_random(c, centre, max_dist, _type)
+    clust = lambda c: genp_clustered(c, centre, max_dist, _type)
+    reali = lambda c: genp_realistic(c, centre, max_dist) if _type is CustomerNodeGenerator or _type is DepotNodeGenerator else lambda c: genp_ev(c, centre, max_dist)
 
     match samp:
         case "R":       return rando(num)
@@ -114,7 +117,7 @@ class AutoGenerator:
     time_window_type: str
 
     def build(self) -> Generator:
-        customers = generate_customers(self.customer_sampling, self.customer_count, self.central_location, self.range)
+        customers = generate_customers(self.customer_sampling, self.customer_count, self.central_location, self.range, CustomerNodeGenerator)
 
         name = '"name"'
         for c in customers:
