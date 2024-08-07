@@ -120,6 +120,8 @@ def genp_realistic(count: int, centre: tuple[float, float], range_m: int, _type:
 
     return customers[:count]
 
+
+
 def genp_ev(c: int, centre: tuple[float, float]) -> list[EVChargePointNodeGenerator]:
     return list(map(lambda v: EVChargePointNodeGenerator(v[0].latitude, v[0].longitude, v[0].charge_rate), find_ev_charging_points(*centre, c)))[:c]
 
