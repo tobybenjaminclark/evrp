@@ -87,14 +87,16 @@ def genp_realistic(count: int, centre: tuple[float, float], range_m: int, _type:
     return customers[:count]
 
 def genp_ev(c: int, centre: tuple[float, float]) -> list[EVChargePointNodeGenerator]:
-    return find_ev_charging_points(*centre, c)[:c]
+    return list(map(lambda v: EVChargePointNodeGenerator(v[0].latitude, v[0].longitude, v[0].charge_rate), find_ev_charging_points(*centre, c)))[:c]
 
 
 def generate_nodes(samp: str, num: int, centre: tuple[float, float], max_dist: int, _type: type) -> list[CustomerNodeGenerator] | list[DepotNodeGenerator] | list[EVChargePointNodeGenerator]:
 
     rando = lambda c: genp_random(c, centre, max_dist, _type)
     clust = lambda c: genp_clustered(c, centre, max_dist, _type)
-    reali = lambda c: genp_realistic(c, centre, max_dist, _type) if _type is CustomerNodeGenerator or _type is DepotNodeGenerator else lambda c: genp_ev(c, centre)
+
+    if _type is CustomerNodeGenerator or _type is DepotNodeGenerator: reali = lambda c: genp_realistic(c, centre, max_dist, _type)
+    else: reali = lambda c: genp_ev(c, centre)
 
     match samp:
         case "R":       return rando(num)
@@ -103,7 +105,12 @@ def generate_nodes(samp: str, num: int, centre: tuple[float, float], max_dist: i
         case "R_C":     return rando(num // 2) + clust(num - num // 2)
         case "R_RL":    return rando(num // 2) + reali(num - num // 2)
         case "C_RL":    return clust(num // 2) + reali(num - num // 2)
-        case "R_C_RL":  return rando(num // 3) + clust((num - num // 3) // 2) + reali(num - num // 3 - (num - num // 3) // 2)
+        case "R_C_RL":
+            # rando(num // 3) + clust((num - num // 3) // 2) + reali(num - num // 3 - (num - num // 3) // 2)
+            r = rando(num // 3)
+            c = clust((num - num // 3) // 2)
+            rl = reali(num - num // 3 - (num - num // 3) // 2)
+            return r+c+rl
         case _:
             raise Exception("Customer sampling does not match any of predefined constants.")
 
@@ -144,5 +151,5 @@ class AutoGenerator:
         #    print(f"{c.latitude},{c.longitude},#00FF00,marker,{name}")
         pass
 
-a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "R_C_RL", "R", "R", "R", "R")
+a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "R_C_RL", "R_C_RL", "R_C_RL", "R_C_RL", "R_C_RL")
 a.build()
