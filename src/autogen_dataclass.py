@@ -2,12 +2,45 @@ from dataclasses import dataclass
 from generator_dataclass import Generator, DepotNodeGenerator, CustomerNodeGenerator, EVChargePointNodeGenerator
 from geopy.distance import geodesic
 from random import uniform, gauss
-
 from src.src_apis.src_open_heat_map import find_ev_charging_points
 from src_road_graph.find_locations import find_locations
 from src_apis.src_google_api import PlaceType
 from math import ceil
-from random import randrange
+from random import randrange, randint
+from json import dump
+
+
+def generate_random_windows(customers: list[CustomerNodeGenerator], window_length: int, horizon: tuple[int, int]) -> None:
+    for customer in customers:
+        start = randint(horizon[0], horizon[1] - window_length)
+        end = start + window_length
+        customer.start_time = start
+        customer.end_time = end
+    return
+
+
+
+def generate_stratisfied_windows(customers: list[CustomerNodeGenerator], window_length: int, horizon: tuple[int, int]) -> None:
+    n_customers = len(customers)
+    total_range = horizon[1] - horizon[0]
+    interval = total_range // n_customers
+
+    for i, customer in enumerate(customers):
+        start = horizon[0] + (i * interval) % total_range
+        end = start + window_length
+        if end > horizon[1]:
+            end = end % total_range
+        customer.start_time = start
+        customer.end_time = end
+    return
+
+
+def generate_time_windows(customers: list[CustomerNodeGenerator], method: str, wtype: str, horizon: tuple[int, int]) -> None:
+    window_length = 120 if wtype == "NARROW" else (240 if wtype == "MODERATE" else 360)
+    match(method):
+        case "R": return generate_random_windows(customers, window_length, horizon)
+        case "S": return generate_stratisfied_windows(customers, window_length, horizon)
+
 
 
 def genp_random(c_count: int, centre: tuple[float, float], range_m: int, _type: type) -> list[CustomerNodeGenerator]|list[DepotNodeGenerator]|list[EVChargePointNodeGenerator]:
@@ -90,11 +123,11 @@ def genp_ev(c: int, centre: tuple[float, float]) -> list[EVChargePointNodeGenera
     return list(map(lambda v: EVChargePointNodeGenerator(v[0].latitude, v[0].longitude, v[0].charge_rate), find_ev_charging_points(*centre, c)))[:c]
 
 
+
 def generate_nodes(samp: str, num: int, centre: tuple[float, float], max_dist: int, _type: type) -> list[CustomerNodeGenerator] | list[DepotNodeGenerator] | list[EVChargePointNodeGenerator]:
 
     rando = lambda c: genp_random(c, centre, max_dist, _type)
     clust = lambda c: genp_clustered(c, centre, max_dist, _type)
-
     if _type is CustomerNodeGenerator or _type is DepotNodeGenerator: reali = lambda c: genp_realistic(c, centre, max_dist, _type)
     else: reali = lambda c: genp_ev(c, centre)
 
@@ -135,21 +168,38 @@ class AutoGenerator:
     time_window_gen: str
     time_window_type: str
 
+    # Instance number
+    inst_num: int
+
     def build(self) -> Generator:
+
         customers = generate_nodes(self.customer_sampling, self.customer_count, self.central_location, self.range, CustomerNodeGenerator)
-        depots = generate_nodes(self.depot_sampling, self.depot_count, self.central_location, self.range,
-                                   DepotNodeGenerator)
-        chargers = generate_nodes(self.charger_sampling, self.charger_count, self.central_location, self.range,
-                                   EVChargePointNodeGenerator)
+        depots = generate_nodes(self.depot_sampling, self.depot_count, self.central_location, self.range, DepotNodeGenerator)
+        chargers = generate_nodes(self.charger_sampling, self.charger_count, self.central_location, self.range, EVChargePointNodeGenerator)
+        generate_time_windows(customers, self.time_window_gen, self.time_window_type, [0, 1440])
+        instance_id = self.customer_sampling + {"WIDE": "3", "MODERATE": "2", "NARROW": "1"}[self.time_window_type] + str(self.inst_num) + "_" + str(len(customers)) + "_" + str(len(chargers))
 
-        for c in customers: print(c)
-        for d in depots: print(d)
-        for c2 in chargers: print(c2)
+        generator_data = {
+            "customers" : [{"latitude": c.latitude,
+                            "longitude": c.longitude,
+                            "demand": c.demand,
+                            "start_time": c.start_time,
+                            "end_time": c.end_time} for c in customers],
+            "depots" : [{"latitude": d.latitude,
+                        "longitude": d.longitude} for d in depots],
+            "chargers" : [{"latitude": c.latitude,
+                            "longitude": c.longitude,
+                           "charge_rate": c.charge_rate} for c in chargers],
+            "output_path": "output/",
+            "instance_id": instance_id
+        }
 
-        #name = '"name"'
-        #for c in customers:
-        #    print(f"{c.latitude},{c.longitude},#00FF00,marker,{name}")
-        pass
+        # Step 3: Write the dictionary to the JSON file
+        filename = instance_id + ".spec"
+        with open(filename, 'w') as file:
+            dump(generator_data, file, indent = 4)  # `indent=4` for pretty printing
 
-a = AutoGenerator(50, 10, 10, (52.949836, -1.147872), 3000, "R_C_RL", "R_C_RL", "R_C_RL", "R_C_RL", "R_C_RL")
+
+
+a = AutoGenerator(3, 1, 3, (52.949836, -1.147872), 3000, "R_C_RL", "R_C_RL", "R_C_RL", "S", "WIDE", 1)
 a.build()

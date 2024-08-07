@@ -57,7 +57,6 @@ class Generator():
 
     def run(self) -> Instance:
         """ Function to generate and return an EVRP Instance from a generator """
-
         return generate_evrp_instance(self)
 
 
@@ -131,7 +130,7 @@ def build_generator(path: str):
 
 
 if __name__ == "__main__":
-    g=build_generator("test2.json")
+    g=build_generator("R_C_RL31_3_3.spec")
     i = g.run()
     print(i)
     i.write()
