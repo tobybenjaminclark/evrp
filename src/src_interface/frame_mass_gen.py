@@ -185,7 +185,6 @@ class EVChargeRangeFrame(Frame):
         self.range_widget.grid(row = 1, column = 0)
 
 
-
 class ProportionFrame(Frame):
     def __init__(self, master, opts=None):
         if opts is None:
@@ -195,14 +194,43 @@ class ProportionFrame(Frame):
         Frame.__init__(self, master)
         self.grid()
 
+        self.total_var = StringVar()
+        self.total_var.set("0%")
+
+        self.spinboxes = []
+
         for i, o in enumerate(opts):
             l = Label(self, text=o)
-            b = Spinbox(self, from_=0, to=100, width=3)
+            b = Spinbox(self, from_=0, to=100, width=3, command=self.update_total)
             al = Label(self, text="%")
 
-            l.grid(row=0, column=i * 2, padx=2, pady=2, sticky=W, columnspan = 2)
+            l.grid(row=0, column=i * 2, padx=2, pady=2, sticky=W, columnspan=2)
             b.grid(row=1, column=i * 2, padx=(2, 0), pady=2, sticky=E)
             al.grid(row=1, column=i * 2 + 1, padx=(0, 2), pady=2, sticky=W)
+
+            # Bind event to Spinbox
+            b.bind("<KeyRelease>", lambda event: self.update_total())
+            self.spinboxes.append(b)
+
+        # Add total label
+        self.total_txt = StringVar()
+        self.total_txt.set("❌")
+
+        total_label = Label(self, textvariable=self.total_txt)
+        total_label.grid(row=0, column=len(opts) * 2, padx=(5, 0), pady=2, sticky=W)
+
+        total_value_label = Label(self, textvariable=self.total_var)
+        total_value_label.grid(row=1, column=len(opts) * 2, padx=(5, 0), pady=2, sticky=E)
+
+    def update_total(self):
+        total = 0
+        for spinbox in self.spinboxes:
+            total += int(spinbox.get())
+        self.total_var.set(f"{total}%")
+        if(total != 100.0):
+            self.total_txt.set("❌")
+        else:
+            self.total_txt.set("✅")
 
 
 
