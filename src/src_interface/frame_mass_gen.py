@@ -3,6 +3,9 @@ from tkinter import ttk
 
 
 class InstanceNumberFrame(Frame):
+
+    description = "This is the total number of instances to generate"
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid(sticky="nsew")  # Ensure the frame fills its parent
@@ -11,13 +14,17 @@ class InstanceNumberFrame(Frame):
         self.grid_rowconfigure(0, weight=0)  # Row for the main label
         self.grid_rowconfigure(1, weight=0)  # Row for the description
         self.grid_rowconfigure(2, weight=1)  # Row for dropdown, scale/spinbox, and instances label
+        self.grid_rowconfigure(3, weight=1)  # Row for dropdown, scale/spinbox, and instances label
         self.grid_columnconfigure(0, weight=1)  # Column for labels and dropdown
         self.grid_columnconfigure(1, weight=1)  # Column for scale/spinbox
         self.grid_columnconfigure(2, weight=0)  # Column for instances label
 
         # Label for the number of instances
-        self.lab_inst_num = Label(self, text="Number of Instances", font = ("Arial bold", 16))
+        self.lab_inst_num = Label(self, text="🚚 Number of Instances", font = ("Arial bold", 16))
         self.lab_inst_num.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10))
 
         # Dropdown menu
         self.dropdown_var = StringVar(self)
@@ -25,26 +32,26 @@ class InstanceNumberFrame(Frame):
         self.dropdown = OptionMenu(self, self.dropdown_var, "Slider", "Numerical", command=self.update_widget)
         self.dropdown.config(width= 10)
 
-        self.dropdown.grid(row=1, column=0, padx=5, pady=5, sticky='w')
+        self.dropdown.grid(row=2, column=0, padx=5, pady=5, sticky='w')
 
         # Initialize widgets
         self.scale_inst_num = Scale(self, from_=1, to=150, orient=HORIZONTAL, length=300)
         self.spinbox_inst_num = Spinbox(self, from_=1, to=150, width=5)
 
         # Display the initial widget
-        self.scale_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+        self.scale_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
         self.spinbox_inst_num.grid_forget()  # Hide spinbox initially
 
         # Label for instances
         self.instances_label = Label(self, text="Instances")
-        self.instances_label.grid(row=1, column=2, padx=5, pady=5, sticky='w')
+        self.instances_label.grid(row=2, column=2, padx=5, pady=5, sticky='w')
 
     def update_widget(self, selection):
         if selection == "Slider":
-            self.scale_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+            self.scale_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
             self.spinbox_inst_num.grid_forget()
         elif selection == "Numerical":
-            self.spinbox_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+            self.spinbox_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
             self.scale_inst_num.grid_forget()
 
 
@@ -65,7 +72,7 @@ class CentralLocationsFrame(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.lab_inst_num = Label(self, text="Central Locations")
+        self.lab_inst_num = Label(self, text="🏙 Central Locations", font = ("Arial bold", 16))
         self.lab_inst_num.grid(row=0, column=0)
 
         # Shared variable to hold the value
@@ -256,17 +263,17 @@ class ProportionFrame(Frame):
 
 class CustomerProportionFrame(Frame):
 
-    description = "Customer nodes in an EVRP Instance can be generated randomly, in clusters or realistically -  or through any combination of these."
+    description = "Customer nodes in an EVRP Instance can be generated randomly, in clusters or realistically -  or through any combination of these. The percentage assigned here refers to the percentage of problem instances that will be created using this generation technique to create customers - e.g. if you are generating 100 instances, and assign 50% to both random and clustered here, then the customers of 50 instances will be generated randomly, and the other 50 in a clustered manner. These values must sum to 100, shown on the right."
 
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Customer Generation Configuration", font=("Arial bold", 16))
+        self.cust_num = Label(self, text="👤 Customer Generation Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx= 5)
 
-        self.description = Label(self, text = self.description, font=("Arial", 12))
-        self.description.grid(row = 1, column = 0, sticky="w", padx= 5)
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10))
 
         self.cust_props = ProportionFrame(self)
         self.cust_props.grid(row = 2, column = 0, padx= 5)
@@ -274,28 +281,40 @@ class CustomerProportionFrame(Frame):
 
 
 class DepotProportionFrame(Frame):
+
+    description = "Depot nodes in an EVRP Instance can be generated randomly, in clusters or realistically -  or through any combination of these. The percentage assigned here refers to the percentage of problem instances that will be created using this generation technique to create depots - e.g. if you are generating 100 instances, and assign 50% to both random and clustered here, then the depots of 50 instances will be generated randomly, and the other 50 in a clustered manner. These values must sum to 100, shown on the right."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Depot Generation Configuration", font=("Arial bold", 16))
+        self.cust_num = Label(self, text="🏢 Depot Generation Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx= 5)
 
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10))
+
         self.depot_props = ProportionFrame(self)
-        self.depot_props.grid(row = 1, column = 0, padx= 5)
+        self.depot_props.grid(row = 2, column = 0, padx= 5)
 
 
 
 class EVChargePointProportionFrame(Frame):
+
+    description = "EV Charging Point nodes in an EVRP Instance can be generated randomly, in clusters or realistically -  or through any combination of these. The percentage assigned here refers to the percentage of problem instances that will be created using this generation technique to create EV Charging Points - e.g. if you are generating 100 instances, and assign 50% to both random and clustered here, then the charging points of 50 instances will be generated randomly, and the other 50 in a clustered manner. These values must sum to 100, shown on the right."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="EV Charge Point Generation Configuration", font=("Arial bold", 16))
+        self.cust_num = Label(self, text="⚡ EV Charge Point Generation Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx= 5)
 
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10))
+
         self.ev_props = ProportionFrame(self)
-        self.ev_props.grid(row = 1, column = 0, padx= 5)
+        self.ev_props.grid(row = 2, column = 0, padx= 5)
 
 
 
@@ -304,7 +323,7 @@ class TimeWindowTypeProportions(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Time Window Type Proportions")
+        self.cust_num = Label(self, text="Time Window Type Proportions", font=("Arial bold", 14))
         self.cust_num.grid(row=0, column=0, sticky="w")
 
         self.tw_props = ProportionFrame(self, ["Narrow", "Moderate", "Wide"])
@@ -317,7 +336,7 @@ class TimeWindowMethodProportions(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Time Window Method Proportions")
+        self.cust_num = Label(self, text="Time Window Method Proportions", font=("Arial bold", 14))
         self.cust_num.grid(row=0, column=0, sticky="w")
 
         self.tw_typ_props = ProportionFrame(self, ["Random", "Stratisfied"])
@@ -326,18 +345,24 @@ class TimeWindowMethodProportions(Frame):
 
 
 class TimeWindowConfiguration(Frame):
+
+    description = "Similar to the propotions defined above, here you can define what split of time window generation, as a percentage that should add to 100. Statisfied generation means the time windows are created methodically, and random means they are created randomly. You can also decide what percentage of instances should use narrow, moderate, and wide time windows respectively - note that this should also add to 100."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Time Window Generation Configuration", font=("Arial bold", 16))
+        self.cust_num = Label(self, text="🕒 Time Window Generation Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx=5, columnspan=2)
 
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", columnspan = 2, padx= 5, pady = (0, 10))
+
         self.method_frame = TimeWindowMethodProportions(self)
-        self.method_frame.grid(row = 1, column = 0, sticky="w")
+        self.method_frame.grid(row = 2, column = 0, sticky="w", padx = 25)
 
         self.type_frame = TimeWindowTypeProportions(self)
-        self.type_frame.grid(row = 1, column = 1, sticky="w")
+        self.type_frame.grid(row = 2, column = 1, sticky="w", padx = 25)
 
 
 
@@ -346,7 +371,7 @@ class RangeFrame(Frame):
         Frame.__init__(self, master)
         self.grid()
 
-        self.cust_num = Label(self, text="Node Count Configuration", font=("Arial bold", 16))
+        self.cust_num = Label(self, text="⏺️ Node Count Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx=5, columnspan = 3)
 
         c = CustomerRangeFrame(self)
@@ -371,27 +396,27 @@ class MassGeneratorFrame(Frame):
         tab1 = ttk.Frame(notebook)
         notebook.add(tab1, text="Instance Parameters")
         f = InstanceNumberFrame(tab1)
-        f.grid(row = 0, column = 0)
+        f.grid(row = 0, column = 0, sticky = "w")
 
         f2 = CentralLocationsFrame(tab1)
-        f2.grid(row = 1, column = 0)
+        f2.grid(row = 1, column = 0, sticky = "w")
 
         r = RangeFrame(tab1)
-        r.grid(row = 2, column = 0)
+        r.grid(row = 2, column = 0, sticky = "w")
 
         tab2 = ttk.Frame(notebook)
         notebook.add(tab2, text="Generation Settings")
         pp = CustomerProportionFrame(tab2)
-        pp.grid(row = 0, column = 0)
+        pp.grid(row = 0, column = 0, pady = 10)
 
         dp = DepotProportionFrame(tab2)
-        dp.grid(row = 1, column = 0)
+        dp.grid(row = 1, column = 0, pady = 10)
 
         ep = EVChargePointProportionFrame(tab2)
-        ep.grid(row = 2, column = 0)
+        ep.grid(row = 2, column = 0, pady = 10)
 
         twp = TimeWindowConfiguration(tab2)
-        twp.grid(row = 3, column = 0)
+        twp.grid(row = 3, column = 0, pady = 10)
 
         tab3 = ttk.Frame(notebook)
         notebook.add(tab3, text="Confirmation")
@@ -403,5 +428,5 @@ if __name__ == "__main__":
     root = Tk()
     root.geometry("1280x720")
     f = MassGeneratorFrame(root)
-    f.grid(row = 0, column = 0)
+    f.grid(row = 0, column = 0, sticky = "NSEW")
     root.mainloop()
