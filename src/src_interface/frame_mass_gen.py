@@ -90,7 +90,7 @@ class CentralLocationsFrame(Frame):
         self.add_button.grid(row=1, column=2)
 
         # Create a canvas for scrolling
-        self.canvas = Canvas(self, height=50)
+        self.canvas = Canvas(self, height=150, width = 400)
         self.canvas.grid(row=2, column=0, columnspan=3, sticky="nsew")
 
         # Add a vertical scrollbar linked to the canvas
@@ -255,6 +255,9 @@ class ProportionFrame(Frame):
 
 
 class CustomerProportionFrame(Frame):
+
+    description = "Customer nodes in an EVRP Instance can be generated randomly, in clusters or realistically -  or through any combination of these."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
@@ -262,8 +265,11 @@ class CustomerProportionFrame(Frame):
         self.cust_num = Label(self, text="Customer Generation Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx= 5)
 
+        self.description = Label(self, text = self.description, font=("Arial", 12))
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5)
+
         self.cust_props = ProportionFrame(self)
-        self.cust_props.grid(row = 1, column = 0, padx= 5)
+        self.cust_props.grid(row = 2, column = 0, padx= 5)
 
 
 
@@ -305,6 +311,7 @@ class TimeWindowTypeProportions(Frame):
         self.tw_props.grid(row = 1, column = 0, sticky="w")
 
 
+
 class TimeWindowMethodProportions(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -315,6 +322,7 @@ class TimeWindowMethodProportions(Frame):
 
         self.tw_typ_props = ProportionFrame(self, ["Random", "Stratisfied"])
         self.tw_typ_props.grid(row = 1, column = 0, sticky="w")
+
 
 
 class TimeWindowConfiguration(Frame):
@@ -330,7 +338,6 @@ class TimeWindowConfiguration(Frame):
 
         self.type_frame = TimeWindowTypeProportions(self)
         self.type_frame.grid(row = 1, column = 1, sticky="w")
-
 
 
 
@@ -353,45 +360,48 @@ class RangeFrame(Frame):
 
 
 
+class MassGeneratorFrame(Frame):
+    def __init__(self, master):
+        Frame.__init__(self, master)
+        root = self
+
+        notebook = ttk.Notebook(root)
+        notebook.pack(fill='both', expand=True)
+
+        tab1 = ttk.Frame(notebook)
+        notebook.add(tab1, text="Instance Parameters")
+        f = InstanceNumberFrame(tab1)
+        f.grid(row = 0, column = 0)
+
+        f2 = CentralLocationsFrame(tab1)
+        f2.grid(row = 1, column = 0)
+
+        r = RangeFrame(tab1)
+        r.grid(row = 2, column = 0)
+
+        tab2 = ttk.Frame(notebook)
+        notebook.add(tab2, text="Generation Settings")
+        pp = CustomerProportionFrame(tab2)
+        pp.grid(row = 0, column = 0)
+
+        dp = DepotProportionFrame(tab2)
+        dp.grid(row = 1, column = 0)
+
+        ep = EVChargePointProportionFrame(tab2)
+        ep.grid(row = 2, column = 0)
+
+        twp = TimeWindowConfiguration(tab2)
+        twp.grid(row = 3, column = 0)
+
+        tab3 = ttk.Frame(notebook)
+        notebook.add(tab3, text="Confirmation")
+
+        submit_button = Button(tab3, text="Submit", command=lambda: print("Done!"))
+        submit_button.pack(pady=10)
+
 if __name__ == "__main__":
     root = Tk()
     root.geometry("1280x720")
-
-    notebook = ttk.Notebook(root)
-    notebook.pack(fill='both', expand=True)
-
-    tab1 = ttk.Frame(notebook)
-    notebook.add(tab1, text="Instance Number")
-    f = InstanceNumberFrame(tab1)
-    f.pack(fill='both', expand=True, padx=10, pady=10)
-
-    tab2 = ttk.Frame(notebook)
-    notebook.add(tab2, text="Central Locations")
-    f2 = CentralLocationsFrame(tab2)
-    f2.pack(fill='both', expand=True, padx=10, pady=10)
-
-    tab3 = ttk.Frame(notebook)
-    notebook.add(tab3, text="Range")
-    r = RangeFrame(tab3)
-    r.pack(fill='both', expand=True, padx=10, pady=10)
-
-    tab4 = ttk.Frame(notebook)
-    notebook.add(tab4, text="Customer Proportion")
-    pp = CustomerProportionFrame(tab4)
-    pp.grid(row = 0, column = 0)
-
-    dp = DepotProportionFrame(tab4)
-    dp.grid(row = 1, column = 0)
-
-    ep = EVChargePointProportionFrame(tab4)
-    ep.grid(row = 2, column = 0)
-
-    tab7 = ttk.Frame(notebook)
-    notebook.add(tab7, text="Time Window")
-    twp = TimeWindowConfiguration(tab7)
-    twp.pack(fill='both', expand=True, padx=10, pady=10)
-
-    submit_button = Button(root, text="Submit", command=lambda: print("Done!"))
-    submit_button.pack(pady=10)
-
+    f = MassGeneratorFrame(root)
+    f.grid(row = 0, column = 0)
     root.mainloop()
