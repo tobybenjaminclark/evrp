@@ -14,39 +14,36 @@ class InstanceNumberFrame(Frame):
         self.grid_columnconfigure(2, weight=0)  # Column for instances label
 
         # Label for the number of instances
-        self.lab_inst_num = Label(self, text="Number of Instances")
-        self.lab_inst_num.grid(row=0, column=0, sticky='e', padx=5, pady=5)
-
-        # Description label
-        description = "This is the total number of EVRP routing problem instances to generate."
-        self.lab_desc = Label(self, text=description)  # Wrap the text to avoid overflow
-        self.lab_desc.grid(row=1, column=0, sticky='e', padx=5, pady=5, columnspan = 3)
+        self.lab_inst_num = Label(self, text="Number of Instances", font = ("Arial bold", 16))
+        self.lab_inst_num.grid(row=0, column=0, sticky='w', padx=5, pady=5)
 
         # Dropdown menu
         self.dropdown_var = StringVar(self)
         self.dropdown_var.set("Slider")  # Default value
         self.dropdown = OptionMenu(self, self.dropdown_var, "Slider", "Numerical", command=self.update_widget)
-        self.dropdown.grid(row=2, column=0, padx=5, pady=5, sticky='e')
+        self.dropdown.config(width= 10)
+
+        self.dropdown.grid(row=1, column=0, padx=5, pady=5, sticky='w')
 
         # Initialize widgets
         self.scale_inst_num = Scale(self, from_=1, to=150, orient=HORIZONTAL, length=300)
         self.spinbox_inst_num = Spinbox(self, from_=1, to=150, width=5)
 
         # Display the initial widget
-        self.scale_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='e')
+        self.scale_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
         self.spinbox_inst_num.grid_forget()  # Hide spinbox initially
 
         # Label for instances
         self.instances_label = Label(self, text="Instances")
-        self.instances_label.grid(row=2, column=2, padx=5, pady=5, sticky='e')
+        self.instances_label.grid(row=1, column=2, padx=5, pady=5, sticky='w')
 
 
     def update_widget(self, selection):
         if selection == "Slider":
-            self.scale_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
+            self.scale_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
             self.spinbox_inst_num.grid_forget()
         elif selection == "Numerical":
-            self.spinbox_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
+            self.spinbox_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
             self.scale_inst_num.grid_forget()
 
 
@@ -57,11 +54,23 @@ class LocationNameFrame(Frame):
         self.grid()
 
         self.label = Label(self, text=text)
-        self.label.grid(row=0, column=0, padx=5, pady=5)
+        self.label.grid(row=0, column=0, padx=5, pady=0)
 
         self.remove = Button(self, text="X", command=lambda: controller.remove_location(self))
-        self.remove.grid(row=0, column=1, padx=5, pady=5)
+        self.remove.grid(row=0, column=1, padx=5, pady=0)
 
+
+
+class LocationNameFrame(Frame):
+    def __init__(self, master, text: str, controller: "CentralLocationsFrame"):
+        Frame.__init__(self, master)
+        self.grid()
+
+        self.label = Label(self, text=text)
+        self.label.grid(row=0, column=0, padx=5, pady=0)
+
+        self.remove = Button(self, text="X", command=lambda: controller.remove_location(self))
+        self.remove.grid(row=0, column=1, padx=5, pady=0)
 
 
 class CentralLocationsFrame(Frame):
@@ -93,9 +102,21 @@ class CentralLocationsFrame(Frame):
         self.add_button = Button(self, text="+", command=self.add_location)
         self.add_button.grid(row=1, column=2)
 
-        # Container to hold the location frames
-        self.location_frame_container = Frame(self)
-        self.location_frame_container.grid(row=2, column=0, columnspan=3, sticky="nsew")
+        # Create a canvas for scrolling
+        self.canvas = Canvas(self, height=50)
+        self.canvas.grid(row=2, column=0, columnspan=3, sticky="nsew")
+
+        # Add a vertical scrollbar linked to the canvas
+        self.scrollbar = Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollbar.grid(row=2, column=3, sticky="ns")
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
+
+        # Create a frame to contain the location frames, and add it to the canvas
+        self.location_frame_container = Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.location_frame_container, anchor="nw")
+
+        # Update scroll region to encompass the new location frames
+        self.location_frame_container.bind("<Configure>", self.on_frame_configure)
 
         self.location_frames = []  # List to track location frames
 
@@ -113,6 +134,9 @@ class CentralLocationsFrame(Frame):
             location_frame.grid(row=len(self.location_frames), column=0, sticky="ew")
             self.location_frames.append(location_frame)
 
+            # Update scroll region after adding new frames
+            self.update_scroll_region()
+
     def remove_location(self, location: LocationNameFrame):
         if location in self.location_frames:
             location.grid_forget()  # Remove it from the layout
@@ -122,6 +146,9 @@ class CentralLocationsFrame(Frame):
             # Reposition remaining frames
             for index, frame in enumerate(self.location_frames):
                 frame.grid(row=index, column=0, sticky="ew")
+
+            # Update scroll region after removing frames
+            self.update_scroll_region()
 
     def update_widget(self, selection):
         if selection == "Preset":
@@ -134,6 +161,12 @@ class CentralLocationsFrame(Frame):
             self.custom_entry.grid(row=1, column=1, padx=5, pady=5)
             self.custom_entry.delete(0, END)
             self.custom_entry.insert(0, self.value_var.get())
+
+    def on_frame_configure(self, event):
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
+
+    def update_scroll_region(self):
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
 
 class InstanceRangeWidget(Frame):
@@ -150,8 +183,8 @@ class InstanceRangeWidget(Frame):
         self.min_customer_box = Spinbox(self, from_=1, to=150, width=5)
         self.max_customer_box = Spinbox(self, from_=1, to=150, width=5)
 
-        self.min_customer_box.grid(row = 0, column = 0, padx = 5, pady = 5)
-        self.max_customer_box.grid(row = 0, column = 1, padx = 5, pady = 5)
+        self.min_customer_box.grid(row = 0, column = 0, padx = 5, pady = 1)
+        self.max_customer_box.grid(row = 0, column = 1, padx = 5, pady = 1)
 
 class CustomerRangeFrame(Frame):
     def __init__(self, master):
@@ -188,8 +221,8 @@ class EVChargeRangeFrame(Frame):
 class ProportionFrame(Frame):
     def __init__(self, master, opts=None):
         if opts is None:
-            opts = ["Random", "Clustered", "Realistic", "Random & Clustered",
-                    "Random & Realistic", "Realistic & Clustered", "Hybrid (All 3)"]
+            opts = ["Random", "Clustered", "Realistic", "Rand. & Clust.",
+                    "Rand. & Realistic", "Realistic & Clust.", "Hybrid"]
 
         Frame.__init__(self, master)
         self.grid()
@@ -200,7 +233,7 @@ class ProportionFrame(Frame):
         self.spinboxes = []
 
         for i, o in enumerate(opts):
-            l = Label(self, text=o)
+            l = Label(self, text=o, font=("Arial", 10))
             b = Spinbox(self, from_=0, to=100, width=3, command=self.update_total)
             al = Label(self, text="%")
 
@@ -279,11 +312,10 @@ class TimeWindowTypeProportions(Frame):
         self.grid()
 
         self.cust_num = Label(self, text="Time Window Type Proportions")
-        self.cust_num.grid(row=0, column=0)
+        self.cust_num.grid(row=0, column=0, sticky="w")
 
         self.tw_props = ProportionFrame(self, ["Narrow", "Moderate", "Wide"])
-        self.tw_props.grid(row = 1, column = 0)
-
+        self.tw_props.grid(row = 1, column = 0, sticky="w")
 
 
 class TimeWindowMethodProportions(Frame):
@@ -292,10 +324,27 @@ class TimeWindowMethodProportions(Frame):
         self.grid()
 
         self.cust_num = Label(self, text="Time Window Method Proportions")
-        self.cust_num.grid(row=0, column=0)
+        self.cust_num.grid(row=0, column=0, sticky="w")
 
         self.tw_typ_props = ProportionFrame(self, ["Random", "Stratisfied"])
-        self.tw_typ_props.grid(row = 1, column = 0)
+        self.tw_typ_props.grid(row = 1, column = 0, sticky="w")
+
+
+class TimeWindowConfiguration(Frame):
+    def __init__(self, master):
+        Frame.__init__(self, master)
+        self.grid()
+
+        self.cust_num = Label(self, text="Time Window Generation Configuration", font=("Arial bold", 16))
+        self.cust_num.grid(row=0, column=0, sticky="w", padx=5, columnspan=2)
+
+        self.method_frame = TimeWindowMethodProportions(self)
+        self.method_frame.grid(row = 1, column = 0, sticky="w")
+
+        self.type_frame = TimeWindowTypeProportions(self)
+        self.type_frame.grid(row = 1, column = 1, sticky="w")
+
+
 
 
 class RangeFrame(Frame):
@@ -314,6 +363,8 @@ class RangeFrame(Frame):
 
         e = EVChargeRangeFrame(self)
         e.grid(row=1, column=2, pady=10, sticky = "e")
+
+
 
 if __name__ == "__main__":
     t = Tk()
@@ -339,11 +390,8 @@ if __name__ == "__main__":
     ep = EVChargePointProportionFrame(t)
     ep.grid(row = 6, column = 0, pady = 10)
 
-    twp = TimeWindowTypeProportions(t)
-    twp.grid(row = 7, column = 0, pady = 10)
-
-    twm = TimeWindowMethodProportions(t)
-    twm.grid(row = 7, column = 1, pady = 10)
+    twp = TimeWindowConfiguration(t)
+    twp.grid(row = 7, column = 0, pady = 10, sticky = 'w')
 
     submit_button = Button(t, text="Submit", command=lambda:print("Done!"))
     submit_button.grid(row = 8, column = 0)

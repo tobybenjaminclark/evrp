@@ -11,6 +11,8 @@ from json import dump
 from itertools import combinations
 from src_road_graph.evrp_route_utils import haversine
 
+
+
 def generate_random_windows(customers: list[CustomerNodeGenerator], window_length: int, horizon: tuple[int, int]) -> None:
     for customer in customers:
         start = randint(horizon[0], horizon[1] - window_length)
@@ -41,6 +43,7 @@ def generate_time_windows(customers: list[CustomerNodeGenerator], method: str, w
     match(method):
         case "R": return generate_random_windows(customers, window_length, horizon)
         case "S": return generate_stratisfied_windows(customers, window_length, horizon)
+    return
 
 
 
