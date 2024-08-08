@@ -1,4 +1,6 @@
 from tkinter import *
+from tkinter import ttk
+
 
 class InstanceNumberFrame(Frame):
     def __init__(self, master):
@@ -37,7 +39,6 @@ class InstanceNumberFrame(Frame):
         self.instances_label = Label(self, text="Instances")
         self.instances_label.grid(row=1, column=2, padx=5, pady=5, sticky='w')
 
-
     def update_widget(self, selection):
         if selection == "Slider":
             self.scale_inst_num.grid(row=1, column=1, padx=5, pady=5, sticky='w')
@@ -54,24 +55,10 @@ class LocationNameFrame(Frame):
         self.grid()
 
         self.label = Label(self, text=text)
-        self.label.grid(row=0, column=0, padx=5, pady=0)
+        self.label.grid(row=0, column=1, padx=5, pady=0)
 
-        self.remove = Button(self, text="X", command=lambda: controller.remove_location(self))
-        self.remove.grid(row=0, column=1, padx=5, pady=0)
-
-
-
-class LocationNameFrame(Frame):
-    def __init__(self, master, text: str, controller: "CentralLocationsFrame"):
-        Frame.__init__(self, master)
-        self.grid()
-
-        self.label = Label(self, text=text)
-        self.label.grid(row=0, column=0, padx=5, pady=0)
-
-        self.remove = Button(self, text="X", command=lambda: controller.remove_location(self))
-        self.remove.grid(row=0, column=1, padx=5, pady=0)
-
+        self.remove = Button(self, text="🗑️", command=lambda: controller.remove_location(self))
+        self.remove.grid(row=0, column=0, padx=5, pady=0, ipady = 2)
 
 class CentralLocationsFrame(Frame):
     def __init__(self, master):
@@ -367,33 +354,44 @@ class RangeFrame(Frame):
 
 
 if __name__ == "__main__":
-    t = Tk()
+    root = Tk()
+    root.geometry("1280x720")
 
-    title = Label(t, text = "Mass Instance Specification Generator Tool")
-    title.grid(row = 0, column = 0, padx = 5, pady = 5)
+    notebook = ttk.Notebook(root)
+    notebook.pack(fill='both', expand=True)
 
-    f = InstanceNumberFrame(t)
-    f.grid(row = 1, column = 0, pady = 10)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Instance Number")
+    f = InstanceNumberFrame(tab1)
+    f.pack(fill='both', expand=True, padx=10, pady=10)
 
-    f2 = CentralLocationsFrame(t)
-    f2.grid(row = 2, column = 0, pady = 10)
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Central Locations")
+    f2 = CentralLocationsFrame(tab2)
+    f2.pack(fill='both', expand=True, padx=10, pady=10)
 
-    r = RangeFrame(t)
-    r.grid(row = 3, column = 0, pady = 10, sticky = "w")
+    tab3 = ttk.Frame(notebook)
+    notebook.add(tab3, text="Range")
+    r = RangeFrame(tab3)
+    r.pack(fill='both', expand=True, padx=10, pady=10)
 
-    pp = CustomerProportionFrame(t)
-    pp.grid(row = 4, column = 0, pady = 10)
+    tab4 = ttk.Frame(notebook)
+    notebook.add(tab4, text="Customer Proportion")
+    pp = CustomerProportionFrame(tab4)
+    pp.grid(row = 0, column = 0)
 
-    dp = DepotProportionFrame(t)
-    dp.grid(row = 5, column = 0, pady = 10)
+    dp = DepotProportionFrame(tab4)
+    dp.grid(row = 1, column = 0)
 
-    ep = EVChargePointProportionFrame(t)
-    ep.grid(row = 6, column = 0, pady = 10)
+    ep = EVChargePointProportionFrame(tab4)
+    ep.grid(row = 2, column = 0)
 
-    twp = TimeWindowConfiguration(t)
-    twp.grid(row = 7, column = 0, pady = 10, sticky = 'w')
+    tab7 = ttk.Frame(notebook)
+    notebook.add(tab7, text="Time Window")
+    twp = TimeWindowConfiguration(tab7)
+    twp.pack(fill='both', expand=True, padx=10, pady=10)
 
-    submit_button = Button(t, text="Submit", command=lambda:print("Done!"))
-    submit_button.grid(row = 8, column = 0)
+    submit_button = Button(root, text="Submit", command=lambda: print("Done!"))
+    submit_button.pack(pady=10)
 
-    t.mainloop()
+    root.mainloop()
