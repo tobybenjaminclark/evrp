@@ -4,27 +4,18 @@ from tkinter import ttk
 
 class InstanceNumberFrame(Frame):
 
-    description = "This is the total number of instances to generate"
+    description = "This is the total number of problem instances to generate - this can be changed either using a slider, or directly providing a number."
 
     def __init__(self, master):
         Frame.__init__(self, master)
-        self.grid(sticky="nsew")  # Ensure the frame fills its parent
-
-        # Configure row and column weights to allow proper resizing
-        self.grid_rowconfigure(0, weight=0)  # Row for the main label
-        self.grid_rowconfigure(1, weight=0)  # Row for the description
-        self.grid_rowconfigure(2, weight=1)  # Row for dropdown, scale/spinbox, and instances label
-        self.grid_rowconfigure(3, weight=1)  # Row for dropdown, scale/spinbox, and instances label
-        self.grid_columnconfigure(0, weight=1)  # Column for labels and dropdown
-        self.grid_columnconfigure(1, weight=1)  # Column for scale/spinbox
-        self.grid_columnconfigure(2, weight=0)  # Column for instances label
+        self.grid()  # Ensure the frame fills its parent
 
         # Label for the number of instances
         self.lab_inst_num = Label(self, text="🚚 Number of Instances", font = ("Arial bold", 16))
         self.lab_inst_num.grid(row=0, column=0, sticky='w', padx=5, pady=5)
 
         self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
-        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10))
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10), columnspan = 3)
 
         # Dropdown menu
         self.dropdown_var = StringVar(self)
@@ -35,8 +26,8 @@ class InstanceNumberFrame(Frame):
         self.dropdown.grid(row=2, column=0, padx=5, pady=5, sticky='w')
 
         # Initialize widgets
-        self.scale_inst_num = Scale(self, from_=1, to=150, orient=HORIZONTAL, length=300)
-        self.spinbox_inst_num = Spinbox(self, from_=1, to=150, width=5)
+        self.scale_inst_num = Scale(self, from_=1, to=150, orient=HORIZONTAL, length=600)
+        self.spinbox_inst_num = Spinbox(self, from_=1, to=150, width=25)
 
         # Display the initial widget
         self.scale_inst_num.grid(row=2, column=1, padx=5, pady=5, sticky='w')
@@ -62,18 +53,24 @@ class LocationNameFrame(Frame):
         self.grid()
 
         self.label = Label(self, text=text)
-        self.label.grid(row=0, column=1, padx=5, pady=0)
+        self.label.grid(row=0, column=1, padx=5, pady=0, sticky = "ew")
 
         self.remove = Button(self, text="🗑️", command=lambda: controller.remove_location(self))
-        self.remove.grid(row=0, column=0, padx=5, pady=0, ipady = 2)
+        self.remove.grid(row=0, column=0, padx=5, pady=0, ipady = 2, sticky = "ew")
 
 class CentralLocationsFrame(Frame):
+
+    description = "These are the central locations."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
 
         self.lab_inst_num = Label(self, text="🏙 Central Locations", font = ("Arial bold", 16))
-        self.lab_inst_num.grid(row=0, column=0)
+        self.lab_inst_num.grid(row=0, column=0, sticky = "w")
+
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", padx= 5, pady = (0, 10), columnspan = 3)
 
         # Shared variable to hold the value
         self.value_var = StringVar()
@@ -82,27 +79,27 @@ class CentralLocationsFrame(Frame):
         self.mode_var = StringVar(self)
         self.mode_var.set("Preset")  # Default value
         self.mode_dropdown = OptionMenu(self, self.mode_var, "Preset", "Custom", command=self.update_widget)
-        self.mode_dropdown.grid(row=1, column=0)
+        self.mode_dropdown.grid(row=2, column=0, sticky = "ew")
 
         # Dropdown for city names
         self.city_var = StringVar(self)
         self.city_var.set("New York")  # Default city
         self.city_dropdown = OptionMenu(self, self.city_var, "New York", "Los Angeles", "Chicago", "Houston")
-        self.city_dropdown.grid(row=1, column=1)
+        self.city_dropdown.grid(row=2, column=1, sticky = "ew")
 
         # Entry widget for custom input
         self.custom_entry = Entry(self, textvariable=self.value_var)
 
         self.add_button = Button(self, text="+", command=self.add_location)
-        self.add_button.grid(row=1, column=2)
+        self.add_button.grid(row=2, column=2)
 
         # Create a canvas for scrolling
         self.canvas = Canvas(self, height=150, width = 400)
-        self.canvas.grid(row=2, column=0, columnspan=3, sticky="nsew")
+        self.canvas.grid(row=3, column=0, columnspan=3, sticky="nsew")
 
         # Add a vertical scrollbar linked to the canvas
         self.scrollbar = Scrollbar(self, orient="vertical", command=self.canvas.yview)
-        self.scrollbar.grid(row=2, column=3, sticky="ns")
+        self.scrollbar.grid(row=3, column=3, sticky="ns")
         self.canvas.config(yscrollcommand=self.scrollbar.set)
 
         # Create a frame to contain the location frames, and add it to the canvas
@@ -147,12 +144,12 @@ class CentralLocationsFrame(Frame):
     def update_widget(self, selection):
         if selection == "Preset":
             self.custom_entry.grid_forget()
-            self.city_dropdown.grid(row=1, column=1, padx=5, pady=5)
+            self.city_dropdown.grid(row=2, column=1, padx=5, pady=5, sticky = "ew")
             self.value_var.set(self.city_var.get())
 
         elif selection == "Custom":
             self.city_dropdown.grid_forget()
-            self.custom_entry.grid(row=1, column=1, padx=5, pady=5)
+            self.custom_entry.grid(row=2, column=1, padx=5, pady=5, sticky = "ew")
             self.custom_entry.delete(0, END)
             self.custom_entry.insert(0, self.value_var.get())
 
@@ -396,13 +393,13 @@ class MassGeneratorFrame(Frame):
         tab1 = ttk.Frame(notebook)
         notebook.add(tab1, text="Instance Parameters")
         f = InstanceNumberFrame(tab1)
-        f.grid(row = 0, column = 0, sticky = "w")
+        f.grid(row = 0, column = 0, sticky = "w", pady = 10)
 
         f2 = CentralLocationsFrame(tab1)
-        f2.grid(row = 1, column = 0, sticky = "w")
+        f2.grid(row = 1, column = 0, sticky = "w", pady = 10)
 
         r = RangeFrame(tab1)
-        r.grid(row = 2, column = 0, sticky = "w")
+        r.grid(row = 2, column = 0, sticky = "w", pady = 10)
 
         tab2 = ttk.Frame(notebook)
         notebook.add(tab2, text="Generation Settings")
