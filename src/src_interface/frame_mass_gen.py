@@ -4,7 +4,7 @@ from tkinter import ttk
 
 class InstanceNumberFrame(Frame):
 
-    description = "This is the total number of problem instances to generate - this can be changed either using a slider, or directly providing a number."
+    description = "This is the total number of problem instances to generate - this can be changed either using a slider, or directly providing a number. It is fast to generate specifications, but running the energy consumption model over these specifications can take a while, particularly where the number of nodes is high."
 
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -58,9 +58,11 @@ class LocationNameFrame(Frame):
         self.remove = Button(self, text="🗑️", command=lambda: controller.remove_location(self))
         self.remove.grid(row=0, column=0, padx=5, pady=0, ipady = 2, sticky = "ew")
 
+
+
 class CentralLocationsFrame(Frame):
 
-    description = "These are the central locations."
+    description = "These are the central locations that a realistic problem instance can be generated around. There is not a guarantee of success at generating an instance at a location, for example if there are no EV charging points in a city, then generating a problem instance there would be infeasible."
 
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -90,7 +92,7 @@ class CentralLocationsFrame(Frame):
         # Entry widget for custom input
         self.custom_entry = Entry(self, textvariable=self.value_var)
 
-        self.add_button = Button(self, text="+", command=self.add_location)
+        self.add_button = Button(self, text="Add to List ➕", command=self.add_location)
         self.add_button.grid(row=2, column=2)
 
         # Create a canvas for scrolling
@@ -160,6 +162,7 @@ class CentralLocationsFrame(Frame):
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
 
 
+
 class InstanceRangeWidget(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -177,6 +180,8 @@ class InstanceRangeWidget(Frame):
         self.min_customer_box.grid(row = 0, column = 0, padx = 5, pady = 1)
         self.max_customer_box.grid(row = 0, column = 1, padx = 5, pady = 1)
 
+
+
 class CustomerRangeFrame(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -188,6 +193,8 @@ class CustomerRangeFrame(Frame):
         self.range_widget = InstanceRangeWidget(self)
         self.range_widget.grid(row = 1, column = 0)
 
+
+
 class DepotRangeFrame(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -198,6 +205,8 @@ class DepotRangeFrame(Frame):
         self.range_widget = InstanceRangeWidget(self)
         self.range_widget.grid(row = 1, column = 0)
 
+
+
 class EVChargeRangeFrame(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -207,6 +216,7 @@ class EVChargeRangeFrame(Frame):
         self.cust_num.grid(row=0, column=0)
         self.range_widget = InstanceRangeWidget(self)
         self.range_widget.grid(row = 1, column = 0)
+
 
 
 class ProportionFrame(Frame):
@@ -364,6 +374,9 @@ class TimeWindowConfiguration(Frame):
 
 
 class RangeFrame(Frame):
+
+    description = "Here, the minimum and maximum number of customer, depot and charge point nodes can be set. Instances will be generated with node counts of a normal distribution between these two points. Please note that the more nodes each instance has, the longer it will take to generate (exponentially)."
+
     def __init__(self, master):
         Frame.__init__(self, master)
         self.grid()
@@ -371,14 +384,17 @@ class RangeFrame(Frame):
         self.cust_num = Label(self, text="⏺️ Node Count Configuration", font=("Arial bold", 16))
         self.cust_num.grid(row=0, column=0, sticky="w", padx=5, columnspan = 3)
 
+        self.description = Label(self, text = self.description, font=("Arial", 12), wraplength = 1200, anchor = "w", justify = "left")
+        self.description.grid(row = 1, column = 0, sticky="w", columnspan = 3, padx= 5, pady = (0, 10))
+
         c = CustomerRangeFrame(self)
-        c.grid(row=1, column=0, pady=10, sticky = "w")
+        c.grid(row=2, column=0, pady=10, sticky = "w")
 
         d = DepotRangeFrame(self)
-        d.grid(row=1, column=1, pady=10, sticky = "nesw")
+        d.grid(row=2, column=1, pady=10, sticky = "nesw")
 
         e = EVChargeRangeFrame(self)
-        e.grid(row=1, column=2, pady=10, sticky = "e")
+        e.grid(row=2, column=2, pady=10, sticky = "e")
 
 
 
@@ -421,9 +437,5 @@ class MassGeneratorFrame(Frame):
         submit_button = Button(tab3, text="Submit", command=lambda: print("Done!"))
         submit_button.pack(pady=10)
 
-if __name__ == "__main__":
-    root = Tk()
-    root.geometry("1280x720")
-    f = MassGeneratorFrame(root)
-    f.grid(row = 0, column = 0, sticky = "NSEW")
-    root.mainloop()
+
+

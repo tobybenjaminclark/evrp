@@ -1,8 +1,8 @@
 from tkinter import *
-from src_road_graph.evrp_location_node import  CustomerNode, EVChargeNode
-from src_apis.src_open_heat_map import find_ev_charging_points
+from src.src_road_graph.evrp_location_node import  CustomerNode, EVChargeNode
+from src.src_apis.src_open_heat_map import find_ev_charging_points
 
-from src_apis.src_google_api import get_coordinates_from_keyword
+from src.src_apis.src_google_api import get_coordinates_from_keyword
 
 class LocationNodeFrame(Frame):
 
