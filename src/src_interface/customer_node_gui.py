@@ -15,7 +15,7 @@ class CustomerNodeGUI:
 
         self.manage_frame = manage_frame
 
-        self.star_icon = PhotoImage(file="../../../../../Downloads/evrp 2/assets/star.png")
+        self.star_icon = PhotoImage(file="src/assets/star.png")
 
         self.colour="red"
 
@@ -32,14 +32,14 @@ class CustomerNodeGUI:
         longitude = round(self.object.longitude, 4)
         demand = self.object.demand
 
-        customer_frame = Frame(self.container, highlightbackground="black", highlightthickness=1, width=500)
+        customer_frame = Frame(self.container, highlightbackground="black", highlightthickness=1)
         #customer_frame.pack(side=LEFT, fill=BOTH, expand=TRUE, padx=2)
 
         contents_frame = Frame(customer_frame)
         contents_frame.pack()
 
             
-        canvas = Canvas(contents_frame, width=475,height=2, bg=self.colour)
+        canvas = Canvas(contents_frame, width=300,height=2, bg=self.colour)
         canvas.pack(side=TOP)
 
         info_frame = Frame(contents_frame)

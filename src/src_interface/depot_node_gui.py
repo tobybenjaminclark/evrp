@@ -14,7 +14,7 @@ class DepotNodeGUI:
         self.bold_font = ("Arial bold", 10)
         self.font = ("Arial", 8)
 
-        self.star_icon = PhotoImage(file="../../../../../Downloads/evrp 2/assets/star.png")
+        self.star_icon = PhotoImage(file="src/assets/star.png")
         
         self.frame = self.create_depot(padx)
         self.moved = moved
@@ -36,7 +36,7 @@ class DepotNodeGUI:
         contents_frame.pack()
 
             
-        canvas = Canvas(contents_frame, width=475,height=2, bg=self.colour)
+        canvas = Canvas(contents_frame, width=300,height=2, bg=self.colour)
         canvas.pack(side=TOP)
 
 

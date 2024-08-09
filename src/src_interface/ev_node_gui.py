@@ -43,7 +43,7 @@ class EVNodeGUI:
             contents_frame.pack()
 
             
-            canvas = Canvas(contents_frame, width=475,height=2, bg=self.colour)
+            canvas = Canvas(contents_frame, width=300,height=2, bg=self.colour)
             canvas.pack(side=TOP)
 
             info_frame = Frame(contents_frame)

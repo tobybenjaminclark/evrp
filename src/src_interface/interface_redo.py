@@ -1,9 +1,5 @@
 from tkinter import *
 from tkinter import ttk, filedialog
-from src.src_road_graph.evrp_location_node import CustomerNode, DepotNode, EVChargeNode
-from src.src_interface.frame_evs import EVFrame
-from PIL import Image, ImageTk
-import csv
 import json
 from src.src_apis.src_google_api import get_coordinates_from_keyword
 from src.src_road_graph.find_locations import find_locations
@@ -21,23 +17,13 @@ class EVRPInterface:
 
     def __init__(self, master):
         self.master = master
-        self.master.geometry('1280x720')
 
-        """ master frame for toby """
         self.master_frame = Frame(self.master)
         self.master_frame.pack(fill=BOTH, expand=TRUE)
 
         self.init_gui()
 
     def init_gui(self):
-        # initialise the core gui elements
-
-        self.delete_icon = PhotoImage(file="../../../../../Downloads/evrp 2/assets/delete.png")
-        self.right_arrow_icon = PhotoImage(file="../../../../../Downloads/evrp 2/assets/arrow_right.png")
-        self.left_arrow_icon = PhotoImage(file="../../../../../Downloads/evrp 2/assets/arrow.png")
-        
-
-
 
         self.list_frame = self.create_list_frame()
 
@@ -125,21 +111,12 @@ class EVRPInterface:
         open_button = Button(vehicle_frame, text="Open File", command=self.open_file_dialog)
         open_button.pack(side=LEFT)
 
-        
-
-
         generate_frame = Frame(bottom_frame)
         generate_frame.pack(side=RIGHT, fill=BOTH, expand=TRUE)
 
         # Create a Generate button
         generate_button = Button(generate_frame, text="Generate", command=lambda: self.run())
         generate_button.pack(side=RIGHT)
-
-
-
-
-
-
 
         return params_frame
 
@@ -722,16 +699,6 @@ class EVRPInterface:
         counter.pack(side=LEFT)
 
         return counter
-
-
-
-
-
-
-        
-
-
-
 
 
 
